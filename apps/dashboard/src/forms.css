@@ -1,0 +1,123 @@
+.lowerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 25px;
+}
+.card {
+  padding: 24px;
+}
+.cardHeading h2 {
+  font-size: 15px;
+}
+.badge {
+  font-size: 7px;
+  letter-spacing: 0.7px;
+  color: #839686;
+  white-space: nowrap;
+}
+form {
+  margin-top: 22px;
+}
+label {
+  font-size: 10px;
+  color: #c4cec2;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+input,
+textarea,
+select {
+  width: 100%;
+  min-width: 0;
+  background: #101922;
+  border: 1px solid #35424d;
+  border-radius: 5px;
+  color: #dce3d9;
+  padding: 10px;
+  font-size: 10px;
+}
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #657580;
+}
+label small {
+  color: #768998;
+  font-size: 8px;
+}
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  gap: 10px;
+}
+.checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: #d6f99a;
+}
+.button.save {
+  background: #25322e;
+  border-color: #455547;
+  color: #cfdeb9;
+}
+.decisionList {
+  display: grid;
+  gap: 0;
+  margin-top: 15px;
+  max-height: 329px;
+  overflow-y: auto;
+}
+.decision {
+  display: flex;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #2a3842;
+  align-items: center;
+}
+.decision strong {
+  font-size: 10px;
+  font-weight: 550;
+  display: block;
+}
+.decision small {
+  display: block;
+  font-size: 8px;
+  color: #8c9aa4;
+  margin-top: 5px;
+}
+.decision .tag {
+  font-size: 7px;
+  padding: 5px 7px;
+  min-width: 60px;
+  text-align: center;
+}
+.decision .mode {
+  margin-left: auto;
+  font-size: 7px;
+  color: #99aa90;
+}
+.receiptNote {
+  border-top: 1px solid #33404a;
+  padding-top: 15px;
+  margin-top: 22px;
+  font-size: 8px;
+  line-height: 1.8;
+  color: #7e929e;
+}
+.empty {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #8c9a9f;
+  padding: 28px 0;
+}

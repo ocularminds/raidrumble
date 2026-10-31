@@ -1,0 +1,273 @@
+.sectionHeading,
+.cardHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sectionHeading {
+  margin: 29px 0 15px;
+}
+.sectionHeading h2,
+.cardHeading h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+.pill {
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  vertical-align: middle;
+  padding: 5px 8px;
+  margin-left: 9px;
+  border: 1px solid #4a5357;
+  border-radius: 4px;
+  color: #a8b6ab;
+}
+.arenaLinks {
+  display: flex;
+  gap: 21px;
+  font-size: 10px;
+  color: #a4afa5;
+}
+.textButton {
+  border: 0;
+  background: none;
+  color: #d3dbcc;
+  padding: 0;
+  font-size: 10px;
+}
+.arenaGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 295px;
+  gap: 18px;
+}
+.previewCard,
+.controlCard,
+.card {
+  border: 1px solid #2f3a44;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #131c25;
+}
+.previewTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  padding: 13px 18px;
+  color: #91a29b;
+  border-bottom: 1px solid #293541;
+}
+.liveDot {
+  width: 4px;
+  height: 4px;
+  margin-right: 6px;
+}
+iframe {
+  width: 100%;
+  border: 0;
+  aspect-ratio: 16 / 9;
+  display: block;
+  background: #121a25;
+}
+.roundTrack {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 19px 16px;
+  border-top: 1px solid #2a3540;
+}
+.roundTrack > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.roundNumber {
+  font-size: 12px;
+  color: #829381;
+  border: 1px solid #3c4b47;
+  border-radius: 50%;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.roundTrack strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+}
+.roundTrack small {
+  display: block;
+  font-size: 8px;
+  color: #7f919d;
+  margin-top: 6px;
+}
+.controlCard {
+  padding: 19px;
+}
+.cardHeading h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.cardHeading > span:last-child {
+  color: #95a28e;
+}
+.muted {
+  color: #92a0ad;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.scenarios {
+  display: grid;
+  gap: 11px;
+  margin-top: 21px;
+}
+.scenarios button {
+  border: 0;
+  background: transparent;
+  color: #e3e7df;
+  display: flex;
+  text-align: left;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+}
+.scenarios button:hover strong {
+  color: #d6f99a;
+}
+.scenarioIcon {
+  font-size: 14px;
+  height: 30px;
+  width: 29px;
+  border: 1px solid;
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.blue {
+  color: #91bffe;
+  background: #91bffe08;
+  border-color: #91bffe33;
+}
+.orange {
+  color: #eac48e;
+  background: #eac48e08;
+  border-color: #eac48e33;
+}
+.rose {
+  color: #e3a7a7;
+  background: #e3a7a708;
+  border-color: #e3a7a733;
+}
+.violet {
+  color: #b8acf3;
+  background: #b8acf308;
+  border-color: #b8acf333;
+}
+.scenarios strong {
+  font-size: 10px;
+  font-weight: 600;
+  display: block;
+}
+.scenarios small {
+  font-size: 8px;
+  color: #84939f;
+  display: block;
+  margin-top: 5px;
+}
+.tag {
+  font-size: 6px;
+  font-weight: 650;
+  padding: 4px 5px;
+  border: 1px solid;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+}
+.scenarios .tag {
+  margin-left: auto;
+}
+.allow {
+  color: #bfe397;
+  border-color: #bfe39738;
+  background: #bfe39708;
+}
+.escalate {
+  color: #efc885;
+  border-color: #efc88538;
+  background: #efc88508;
+}
+.block {
+  color: #e5a3a3;
+  border-color: #e5a3a338;
+  background: #e5a3a308;
+}
+.collab {
+  color: #b8acf3;
+  border-color: #b8acf338;
+  background: #b8acf308;
+}
+.divider {
+  height: 1px;
+  background: #303c45;
+  margin: 17px 0;
+}
+.button.oil {
+  background: #1c292a;
+  width: 100%;
+  color: #c6d2b1;
+  border-color: #3f5043;
+  font-size: 10px;
+  justify-content: space-between;
+  padding: 11px;
+  gap: 10px;
+}
+.oil span:last-child {
+  font-size: 7px;
+  color: #8da082;
+}
+.quiet {
+  color: #92a0a8;
+  margin: 13px auto 0;
+  display: block;
+  font-size: 8px;
+}
+.controlNote {
+  font-size: 8px;
+  line-height: 1.7;
+  color: #7c8a95;
+  text-align: center;
+  margin: 17px 0 0;
+}
+.approval {
+  margin-top: 18px;
+  background: #2d281e;
+  border: 1px solid #8b703d;
+  border-radius: 9px;
+  padding: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+[hidden] {
+  display: none !important;
+}
+.approval h2 {
+  font-size: 22px;
+  margin: 14px 0 6px;
+}
+.approval p {
+  color: #ccc3ac;
+  font-size: 12px;
+}
+.approval .button {
+  margin-left: 12px;
+}

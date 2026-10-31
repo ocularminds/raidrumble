@@ -1,0 +1,51 @@
+version: 1
+defaults: { mode: shadow, latencyBudgetMs: 120 }
+lists:
+  allow: []
+  block: []
+  blockedTerms: []
+params:
+  minRaidSize: 3
+  minRaiderAccountAgeDays: 7
+  maxRaidsPerChannelPerHour: 2
+  escalateTimeoutMs: 10000
+actions:
+  rumble.start:
+    block:
+      - { when: 'raider in lists.block', reason: RAIDER_BLOCKLISTED }
+      - {
+          when: 'raider.accountAgeDays < params.minRaiderAccountAgeDays',
+          reason: RAIDER_ACCOUNT_TOO_NEW,
+        }
+      - { when: 'raid.viewers < params.minRaidSize', reason: RAID_TOO_SMALL }
+      - { when: 'raidsFrom(raider, 60m) > params.maxRaidsPerChannelPerHour', reason: RAID_FLOOD }
+    escalate:
+      - { when: 'raid.factsUnavailable', reason: RAID_FACTS_UNAVAILABLE }
+    allow:
+      - { when: 'raider in lists.allow', reason: RAIDER_ALLOWLISTED }
+      - { when: 'host.follows(raider)', reason: HOST_FOLLOWS_RAIDER }
+      - { when: 'ledger.has(host, raider)', reason: KNOWN_RIVAL }
+    otherwise:
+      {
+        verdict: ESCALATE,
+        approver: host,
+        timeoutMs: params.escalateTimeoutMs,
+        reason: UNKNOWN_RAIDER,
+      }
+    onFailure: ESCALATE
+  rumble.start.collab:
+    onFailure: ESCALATE
+  content.render:
+    onFailure: TEMPLATE
+  chat.send:
+    onFailure: SKIP
+  special.fire:
+    onFailure: BLOCK
+  rewards.configure:
+    onFailure: BLOCK
+  shoutout.send:
+    onFailure: SKIP
+  ledger.settle:
+    onFailure: LOCAL
+  events.subscribe:
+    onFailure: BLOCK

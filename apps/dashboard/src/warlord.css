@@ -1,0 +1,41 @@
+.warlord {
+  max-width: 480px;
+  min-height: 100vh;
+  margin: auto;
+  padding: 60px 30px 35px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.warlord .eyebrow {
+  color: #ffa066;
+  font-size: 10px;
+}
+.warlord h1 {
+  font-size: 52px;
+  line-height: 0.97;
+  font-weight: 850;
+  margin: 25px 0;
+}
+.warlord p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #aebbac;
+}
+.ramArt {
+  font-size: 110px;
+  color: #ffa066;
+  margin: 15px 0 40px;
+  text-shadow: 0 10px 40px #ffa06633;
+}
+.warlord .button {
+  min-height: 70px;
+  font-size: 15px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+.warlord .button.primary {
+  background: #ffa066;
+  border-color: #ffa066;
+}
