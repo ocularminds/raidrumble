@@ -1,0 +1,188 @@
+main {
+  margin-left: 242px;
+  padding: 39px 46px 22px;
+  max-width: 1900px;
+}
+.topbar,
+.topActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  font-weight: 600;
+  color: #91a08e;
+}
+h1 {
+  font-size: 30px;
+  margin: 9px 0 30px;
+  letter-spacing: -1.2px;
+  font-weight: 650;
+}
+.dot {
+  color: #d6f99a;
+}
+.topActions {
+  margin-top: -8px;
+}
+.connection {
+  font-size: 10px;
+  color: #95a18e;
+  padding-left: 12px;
+  position: relative;
+}
+.connection::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.button {
+  border: 1px solid #34413d;
+  border-radius: 6px;
+  padding: 12px 17px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.3;
+}
+.button:hover {
+  filter: brightness(1.12);
+}
+.button.primary {
+  background: #d6f99a;
+  border-color: #d6f99a;
+  color: #172016;
+}
+.button.subtle {
+  background: #141d25;
+  color: #dce2d8;
+  border-color: #3b4847;
+}
+.hero {
+  border: 1px solid #40523f;
+  border-radius: 13px;
+  min-height: 318px;
+  background: #1d302c;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.heroCopy {
+  padding: 35px 38px;
+  position: relative;
+  z-index: 1;
+}
+.light {
+  color: #c3d3b9;
+  font-size: 8px;
+}
+.hero h2 {
+  font-size: clamp(33px, 3.1vw, 49px);
+  line-height: 1.04;
+  letter-spacing: -1.7px;
+  margin: 17px 0 15px;
+  font-weight: 700;
+}
+.hero p {
+  color: #b9c7bf;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-bottom: 23px;
+}
+.hero small {
+  display: block;
+  font-size: 8px;
+  color: #92a89a;
+  margin-top: 12px;
+}
+.heroArt {
+  position: relative;
+  width: 47%;
+  margin-right: 5%;
+  align-self: stretch;
+}
+.orbit {
+  border: 1px solid #d6f99a11;
+  position: absolute;
+  width: 390px;
+  height: 390px;
+  border-radius: 50%;
+  top: -12px;
+  left: 49%;
+  transform: translateX(-50%);
+}
+.orbit2 {
+  width: 295px;
+  height: 295px;
+  top: 37px;
+}
+.orbit3 {
+  width: 490px;
+  height: 490px;
+  top: -62px;
+}
+.homeOrb {
+  position: absolute;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  left: 12%;
+  top: 101px;
+  background: radial-gradient(circle at 25% 25%, #c4dbff, #6c98ca 70%);
+  box-shadow:
+    0 25px 50px #06132277,
+    inset -10px -14px 10px #234f8a44;
+  transform: rotate(-15deg);
+}
+.raidTriangle {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  top: 91px;
+  right: 7%;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: linear-gradient(135deg, #ffe3c3, #ffa066 60%, #de7d3d);
+  transform: rotate(13deg);
+}
+.versus {
+  position: absolute;
+  font-size: 32px;
+  font-weight: 300;
+  color: #becab6;
+  top: 138px;
+  left: 51%;
+}
+.artLabel {
+  position: absolute;
+  top: 241px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+.labelHome {
+  left: 12%;
+  color: #8cbbef;
+}
+.labelRaid {
+  right: 7%;
+  color: #ffae7b;
+}
+.artFooter {
+  position: absolute;
+  bottom: 37px;
+  left: 24%;
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #90a696;
+}

@@ -1,1 +1,112 @@
-# raidrumble
+# RaidRumble
+
+One raid. Three rounds. A reason to stay.
+
+RaidRumble gives Twitch raiders and the host’s community a three-minute showdown: **Siege → Know Your Host → Fusion Boss**, followed by a shared end card and a five-minute Afterglow counter. Home Guard is **blue ●**; Raiders are **orange ▲**.
+
+## Run it
+
+Use Node **20.20.0** from `.nvmrc` and pnpm. The repository pins pnpm **10.20.0** through Corepack. If you switch Node versions after installing dependencies, rebuild `better-sqlite3` for the selected runtime before running the app.
+
+```sh
+pnpm i
+pnpm dev
+```
+
+- Dashboard: <http://localhost:5174>
+- Arena preview: <http://localhost:5173/overlay/demo?preview=1>
+- OBS browser source: <http://localhost:5173/overlay/demo>
+- Server health: <http://localhost:3000/health>
+
+Click **Launch test raid**. No Twitch, OpenAI, or Decionis account is needed. The simulator sends 300 synthetic raiders and 20 home members through the same game modules used by EventSub. Fifteen raiders participate; all 20 home members participate. The crowd fights a boss scaled to the active participants.
+
+```sh
+pnpm sim
+pnpm sim -- --scenario stranger-raid
+pnpm sim -- --scenario hate-raid
+pnpm sim -- --scenario collab
+```
+
+With `pnpm dev` running, these commands drive the actual dashboard and OBS overlay. A stranger waits for the host’s 10-second approval. An unwelcome raid is blocked. **End practice match** lets you try another scenario.
+
+Without a server, `pnpm sim` runs a fast headless match and prints its actual results. To force this mode:
+
+```sh
+pnpm sim -- --headless --scenario normal
+pnpm sim -- --headless --scenario stranger-raid
+pnpm sim -- --headless --scenario hate-raid
+pnpm sim -- --headless --scenario collab
+pnpm sim -- --headless --json
+```
+
+Headless stranger mode includes an explicitly simulated host approval. `--speed 2` accelerates a visual simulation; it does not shorten the game’s logical round durations. Demo actions never send Twitch messages, create real rewards, or send shoutouts.
+
+## OBS and live setup
+
+1. Register a Twitch application and set its redirect URI to `http://localhost:3000/auth/callback` for local development.
+2. Copy `.env.example` to `.env`. Set the Twitch client ID, client secret, and the dedicated bot’s user ID.
+3. Run `pnpm dev`. Connect the host, then the configured bot account in the dashboard.
+4. Copy the host’s OBS URL into a Browser Source at **1920 × 1080**. The source is transparent while idle. The `?preview=1` parameter adds a background and idle screen for viewing in a browser.
+5. A real raid enters the same policy gate and match runner. The host can also run a local test against their own overlay.
+
+Host and bot identity are separate. OAuth state is browser-bound and single-use; host controls require the matching host session. Tokens stay in server memory, so reconnect after a server restart. An optional raider can authorize `/auth/raider` for temporary roster capture. Native source-channel chat is used for the roster; relayed Shared Chat messages are not added to it.
+
+The Warlord link posted by the bot requires Twitch login as the raiding streamer and is bound to the active match. A local, labelled practice controller is available at <http://localhost:5174/warlord/demo>. Battering Ram and Boiling Oil each have one use during Siege. Eligible channels can explicitly approve a **100 Channel Point Reinforcements** reward; only fulfilled redemptions of that configured reward receive a bonus.
+
+For planned collabs, connect Shared Chat and use **Start Shared Chat rumble** in the live dashboard. All session participants are checked by policy. If there are several visiting channels, choose the opposing community. Approvals become stale when session membership changes.
+
+The read-only mirror is `/mirror/<matchId>` on the overlay server. It follows that match only. The rivalry map displays channel aggregates, and Afterglow counts **tagged raiders who chatted in the last two minutes**, not Twitch’s total concurrent viewers.
+
+Live Twitch permissions and delivery still require verification with real host/bot accounts. The automated suite uses mocked Twitch responses and real local policy evaluation. Default development listeners bind to loopback. A hosted deployment needs HTTPS, the matching OAuth redirect, and explicit server/dashboard/overlay origins; it is not deployed by this repository.
+
+## Policy before action
+
+The default authority is `LocalPolicyGate`, loading `policy/raidrumble.policy.yaml`. New live hosts begin in **Shadow Mode**; the demo begins in enforce mode so its scenarios are visible. Ordinary Shadow Mode decisions report what would happen while allowing the action. Operational errors and timeouts always use the action’s `onFailure` rule.
+
+An enforced escalation produces no match until the named host approves. The executor claims the approval grant immediately before the action, once only. Blocked/generated text is replaced by an authored fallback even in Shadow Mode. Every Helix write, including EventSub subscription creation, goes through `PolicyExecutor.executeHelix`; the test suite scans TypeScript syntax for bypasses.
+
+**Hosted Decionis is deliberately not claimed as complete.** Its unconfirmed wire mapping is isolated behind the interface with one `TODO(decionis-wire)`. `POLICY_GATE=decionis` exercises the explicit local failure paths until the decision-evaluation mapping is verified. No hosted decisions or signed dossiers are fabricated. The ledger can already store start/settlement decision and dossier IDs; local receipts are unsigned.
+
+## Content and privacy
+
+The game runs entirely on deterministic templates without an API key. With `OPENAI_API_KEY` and an explicitly configured `OPENAI_MODEL`, the content service uses the [Responses API’s structured output format](https://developers.openai.com/api/docs/guides/structured-outputs).
+
+The model selects supplied channel facts and creates fictional boss flavour. Templates realize factual questions from the actual title/category/up-to-three supplied facts, so model prose cannot invent personal facts. There are no web searches. Every resulting question and boss text passes `content.render`; errors, moderation flags, malformed output, and blocked terms fall back to safe authored content.
+
+Raw viewer messages stay on the server. Only recognized commands and gated display names enter the game. Roster and Afterglow identities are ephemeral. SQLite stores match aggregates, receipts and retention counts; regulars use per-channel salted hashes in a separate logical store. In local development, a host login/server session supplies a stream boundary when an actual Twitch stream ID is unavailable.
+
+## Plug-in rounds
+
+Every round is a single-responsibility, stateless class with the same lifecycle:
+
+```ts
+interface RoundModule<S> {
+  readonly id: string;
+  readonly durationMs: number;
+  start(ctx: MatchContext): S;
+  onInput(state: S, input: PlayerInput, ctx: MatchContext): S;
+  tick(state: S, dtMs: number, ctx: MatchContext): S;
+  view(state: S): RoundView;
+  result(state: S): RoundResult;
+}
+```
+
+Add the class and a `defineRound(new YourRound())` entry in `packages/engine/src/registry.ts`. The timeline needs no round-specific branches. It handles fixed input windows, round transitions, the end card, and fault isolation. The overlay renders the common view, with scene renderers for gate, quiz and boss data. See [the round guide](docs/rounds.md).
+
+Siege, Know Your Host and Fusion Boss were generated in **overlapping sub-agent tasks in one Codex build chat**. [The build log](docs/codex.md) and [parallel task evidence](docs/parallel.json) record the observed red/green checkpoints. Build chat: `01a1930a-c3f4-7b53-b90a-a523ae252545`.
+
+## Checks
+
+```sh
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm format:check
+pnpm build
+```
+
+Tests cover attribution conflicts, Shared Chat, participation fairness, spam limits, deterministic round snapshots, policy modes/failures, grant replay, content fallbacks, EventSub reconnects, OAuth identity, live control routes, reward budgets, SQLite persistence, and retention. Authored source paths are checked for the 500-line limit and no hyphens. Required pnpm filenames are the tooling exception.
+
+All visual art is original CSS/Canvas geometry. The demo footage is local simulation, labelled as such; no live retention results or signed authority claims are implied. See [demo notes](docs/demo.md).
+
+The local deliverables are [the captioned demo](artifacts/demo.mp4), [captions](artifacts/demo.srt), [the provenance manifest](artifacts/manifest.json), and [the contact sheet](artifacts/contact.jpg). Captures and rendered media stay in the ignored `artifacts/` directory. The source/log segment shows the actual overlapping round tasks and their common interface. Recompose existing captures on macOS with `python3 tools/video/main.py`, then validate and generate the contact sheet with `python3 tools/video/check.py` (Pillow and FFmpeg required).

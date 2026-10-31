@@ -1,0 +1,12 @@
+{
+  "name": "@raidrumble/ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "@raidrumble/engine": "workspace:*",
+    "@raidrumble/policy": "workspace:*"
+  }
+}

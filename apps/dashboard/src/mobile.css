@@ -1,0 +1,142 @@
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 200px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+  main {
+    margin-left: 200px !important;
+    padding: 28px !important;
+  }
+  .arenaGrid {
+    grid-template-columns: minmax(0, 1fr) 265px !important;
+  }
+  .roundTrack {
+    gap: 8px !important;
+    padding: 16px 10px !important;
+  }
+  .roundNumber {
+    display: none !important;
+  }
+  .heroCopy {
+    padding: 30px !important;
+  }
+  .heroArt {
+    margin-right: 0 !important;
+  }
+  .homeOrb {
+    width: 85px !important;
+    height: 85px !important;
+  }
+  .raidTriangle {
+    width: 90px !important;
+    height: 100px !important;
+  }
+  .lowerGrid {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 900px) {
+  .sidebar {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding: 25px !important;
+  }
+  .topbar {
+    gap: 8px !important;
+  }
+  .topActions .connection {
+    display: none;
+  }
+  .arenaGrid {
+    grid-template-columns: 1fr !important;
+  }
+  .controlCard {
+    padding: 23px !important;
+  }
+  .scenarios {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px 25px !important;
+  }
+  .toast {
+    left: 50% !important;
+  }
+  .heroArt {
+    margin-right: 4% !important;
+  }
+  .setup {
+    flex-wrap: wrap;
+  }
+  .setupActions {
+    width: 100%;
+  }
+}
+@media (max-width: 580px) {
+  main {
+    padding: 19px !important;
+  }
+  h1 {
+    font-size: 24px !important;
+  }
+  .topActions {
+    margin: 0 !important;
+  }
+  .topActions .button {
+    font-size: 9px;
+    gap: 8px;
+    padding: 10px;
+  }
+  .heroArt {
+    display: none;
+  }
+  .heroCopy {
+    padding: 27px !important;
+  }
+  .hero h2 {
+    font-size: 42px !important;
+  }
+  .arenaLinks a {
+    display: none;
+  }
+  .sectionHeading h2 {
+    font-size: 15px !important;
+  }
+  .scenarios {
+    grid-template-columns: 1fr !important;
+  }
+  .scenarios strong {
+    font-size: 12px !important;
+  }
+  .scenarios small {
+    font-size: 10px !important;
+  }
+  .scenarios .tag {
+    font-size: 8px !important;
+  }
+  .fieldGrid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+  .card {
+    padding: 20px !important;
+  }
+  .cardHeading {
+    flex-wrap: wrap;
+  }
+  .approval {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  .approval .button {
+    margin-left: 0 !important;
+    margin-right: 10px;
+  }
+  .setup {
+    padding: 22px !important;
+  }
+  footer {
+    gap: 20px;
+  }
+}
