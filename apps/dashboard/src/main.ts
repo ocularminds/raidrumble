@@ -4,6 +4,7 @@ import { layout } from './layout.js';
 import { RivalryMap } from './network.js';
 import { warlord } from './warlord.js';
 import { StreamControls } from './controls.js';
+import { HostApproval } from './approval.js';
 import './style.css';
 
 const root = element('app');
@@ -23,6 +24,7 @@ function dashboard(): void {
   let populated = false;
   let busy = false;
   const streamControls = new StreamControls(hostId, api, poll);
+  const approval = new HostApproval();
   const authUrl = `${apiBase}/auth/host`;
   element<HTMLAnchorElement>('authHost').href = authUrl;
   element<HTMLAnchorElement>('connectHost').href = authUrl;
@@ -34,11 +36,19 @@ function dashboard(): void {
     try {
       data = await api.get<DashboardView>(`/api/status/${host}`);
       element('connection').textContent =
-        hostId === 'demo' ? 'Local arena online' : 'Channel connected';
+        hostId === 'demo'
+          ? 'Local arena online'
+          : data.twitch.hostEventsConnected && data.twitch.chatEventsConnected
+            ? 'Twitch ready'
+            : 'Twitch setup incomplete';
       element('channelName').textContent =
         hostId === 'demo' ? 'Practice arena' : data.arena.hostName;
       element('channelStatus').textContent =
-        hostId === 'demo' ? 'LOCAL / NO ACCOUNT NEEDED' : 'TWITCH / CONNECTED';
+        hostId === 'demo'
+          ? 'LOCAL / NO ACCOUNT NEEDED'
+          : data.twitch.hostConnected
+            ? 'TWITCH / SIGNED IN'
+            : 'TWITCH / RECONNECT';
       const active = data.arena.status === 'active' || data.arena.status === 'pending';
       element('matchPill').textContent =
         data.arena.match?.round?.title.toUpperCase() ??
@@ -53,13 +63,21 @@ function dashboard(): void {
         data.budgets?.oil !== 1;
       element('oilBudget').textContent = data.budgets?.oil === 0 ? 'USED' : '1 / MATCH';
       element<HTMLAnchorElement>('openOverlay').href = `${data.overlayUrl}?preview=1`;
-      element('approval').hidden = !data.arena.pending;
-      if (data.arena.pending)
-        element('acceptTime').textContent = String(
-          Math.max(0, Math.ceil((data.arena.pending.expiresAt - Date.now()) / 1000)),
-        );
-      element('authState').textContent = data.twitch.configured
-        ? `${data.twitch.hostConnected ? 'Host connected' : 'Host not connected'} · ${data.twitch.botConnected ? 'Bot connected' : 'Bot not connected'}`
+      approval.update(data);
+      const twitch = data.twitch;
+      element('authState').textContent = twitch.configured
+        ? [
+            twitch.hostConnected ? 'Host connected' : 'Host not connected',
+            twitch.botConnected ? 'Bot connected' : 'Bot not connected',
+            ...(twitch.hostConnected
+              ? [twitch.hostEventsConnected ? 'Raid events ready' : 'Raid events pending']
+              : []),
+            ...(twitch.botConnected
+              ? [twitch.chatEventsConnected ? 'Chat ready' : 'Chat pending']
+              : []),
+            ...(twitch.eventCount ? [`${twitch.eventCount} events received`] : []),
+            ...(twitch.setupError ? [twitch.setupError] : []),
+          ].join(' · ')
         : 'Set TWITCH_* in .env to connect real channels.';
       if (!populated) {
         for (const key of ['allow', 'block', 'blockedTerms'] as const)

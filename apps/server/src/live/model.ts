@@ -26,6 +26,7 @@ export interface LiveRaid {
 }
 
 export interface LiveClient {
+  readonly status?: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'stopped';
   start(): void;
   stop(): void;
 }
@@ -34,6 +35,7 @@ export interface LiveOptions {
   clientId?: string;
   clientSecret?: string;
   botUserId?: string;
+  redirectUri?: string;
   baseUrl: string;
   dashboardUrl: string;
   onHost: (profile: LiveProfile) => void | Promise<void>;
@@ -53,6 +55,12 @@ export interface LiveStatus {
   configured: boolean;
   hostConnected: boolean;
   botConnected: boolean;
+  hostEventsConnected: boolean;
+  chatEventsConnected: boolean;
+  subscriptions: string[];
+  eventCount: number;
+  lastEvent?: { type: 'raid' | 'chat' | 'shared' | 'redemption'; atMs: number };
+  setupError?: string;
 }
 
 export interface LiveAccount {

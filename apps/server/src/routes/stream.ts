@@ -55,6 +55,7 @@ export function registerStream(app: FastifyInstance, { live, actions }: StreamRo
   });
 
   app.get<{ Params: { hostId: string } }>('/api/rewards/:hostId', async (request, reply) => {
+    reply.header('Cache-Control', 'private, no-store');
     const hostId = request.params.hostId;
     if (hostId !== 'demo' && !live.authorizeHost(request, hostId))
       return reply.code(401).send({ error: 'Host login required.' });
@@ -62,6 +63,7 @@ export function registerStream(app: FastifyInstance, { live, actions }: StreamRo
   });
 
   app.post<{ Params: { hostId: string } }>('/api/rewards/:hostId', async (request, reply) => {
+    reply.header('Cache-Control', 'private, no-store');
     const hostId = request.params.hostId;
     if (hostId === 'demo' || !live.authorizeHost(request, hostId))
       return reply.code(401).send({ error: 'Host login required.' });
@@ -75,17 +77,19 @@ export function registerStream(app: FastifyInstance, { live, actions }: StreamRo
   app.post<{ Params: { hostId: string }; Body: { decisionId?: unknown } }>(
     '/api/rewards/:hostId/approve',
     async (request, reply) => {
+      reply.header('Cache-Control', 'private, no-store');
       const hostId = request.params.hostId;
       if (hostId === 'demo' || !live.authorizeHost(request, hostId))
         return reply.code(401).send({ error: 'Host login required.' });
       if (typeof request.body?.decisionId !== 'string')
         return reply.code(400).send({ error: 'Choose a pending reward setup decision.' });
       try {
-        return await actions.approveReward(
+        const result = await actions.approveReward(
           hostId,
           live.userId(request) ?? '',
           request.body.decisionId,
         );
+        return result.configured ? result : reply.code(202).send(result);
       } catch (error) {
         return failure(reply, error);
       }

@@ -79,6 +79,27 @@ describe('Live EventSub integration', () => {
     await f.app.close();
   });
 
+  it('keeps host and bot scopes separate when the deliberately configured account is the same', async () => {
+    const f = fixture({ botUserId: '10' });
+    const host = await login(f, 'host', '10');
+    expect((await login(f, 'bot', '10', host.cookie)).response.statusCode).toBe(302);
+    await f.sockets[0]!.options.onSession('hostsession', { reconnected: false });
+    await f.sockets[1]!.options.onSession('botsession', { reconnected: false });
+    const writes = f.fetcher.mock.calls.filter(([url]) => String(url).includes('/helix/eventsub'));
+    expect(writes).toHaveLength(6);
+    for (const [, init] of writes) {
+      const body = JSON.parse(String(init?.body)) as { type: string };
+      const role = body.type === 'channel.chat.message' ? 'bot' : 'host';
+      expect(new Headers(init?.headers).get('Authorization')).toBe(`Bearer 10:${role}`);
+    }
+    expect(f.service.status('10')).toMatchObject({
+      configured: true,
+      hostConnected: true,
+      botConnected: true,
+    });
+    await f.app.close();
+  });
+
   it('enriches only raids for the bound host with account age and both profiles', async () => {
     const f = fixture();
     await login(f, 'host', '10');

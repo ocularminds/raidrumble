@@ -43,8 +43,8 @@ Headless stranger mode includes an explicitly simulated host approval. `--speed 
 
 ## OBS and live setup
 
-1. Register a Twitch application and set its redirect URI to `http://localhost:3000/auth/callback` for local development.
-2. Copy `.env.example` to `.env`. Set the Twitch client ID, client secret, and the dedicated bot’s user ID.
+1. Register a Twitch application and set its redirect URI to `http://localhost:3000/auth/callback` for local development. If the application already has a different callback, set `TWITCH_AUTH_URL` to that exact registered URI; see [callback setup](apps/server/src/live/README.md).
+2. Copy `.env.example` to `.env`. Set the Twitch client ID, client secret, and the bot’s user ID. `TWITCH_AUTH_CLIENT` and `TWITCH_AUTH_SECRET` are supported aliases. One Twitch account can serve both roles in a local test, with separate role tokens.
 3. Run `pnpm dev`. Connect the host, then the configured bot account in the dashboard.
 4. Copy the host’s OBS URL into a Browser Source at **1920 × 1080**. The source is transparent while idle. The `?preview=1` parameter adds a background and idle screen for viewing in a browser.
 5. A real raid enters the same policy gate and match runner. The host can also run a local test against their own overlay.
@@ -57,7 +57,7 @@ For planned collabs, connect Shared Chat and use **Start Shared Chat rumble** in
 
 The read-only mirror is `/mirror/<matchId>` on the overlay server. It follows that match only. The rivalry map displays channel aggregates, and Afterglow counts **tagged raiders who chatted in the last two minutes**, not Twitch’s total concurrent viewers.
 
-Live Twitch permissions and delivery still require verification with real host/bot accounts. The automated suite uses mocked Twitch responses and real local policy evaluation. Default development listeners bind to loopback. A hosted deployment needs HTTPS, the matching OAuth redirect, and explicit server/dashboard/overlay origins; it is not deployed by this repository.
+The [verification record](docs/verify.md) distinguishes confirmed account-backed checks from remaining real-raid checks. The automated suite uses mocked Twitch responses and real local policy evaluation. Default development listeners bind to loopback. A hosted deployment needs HTTPS, the matching OAuth redirect, and explicit server/dashboard/overlay origins; it is not deployed by this repository.
 
 ## Policy before action
 
@@ -65,7 +65,11 @@ The default authority is `LocalPolicyGate`, loading `policy/raidrumble.policy.ya
 
 An enforced escalation produces no match until the named host approves. The executor claims the approval grant immediately before the action, once only. Blocked/generated text is replaced by an authored fallback even in Shadow Mode. Every Helix write, including EventSub subscription creation, goes through `PolicyExecutor.executeHelix`; the test suite scans TypeScript syntax for bypasses.
 
-**Hosted Decionis is deliberately not claimed as complete.** Its unconfirmed wire mapping is isolated behind the interface with one `TODO(decionis-wire)`. `POLICY_GATE=decionis` exercises the explicit local failure paths until the decision-evaluation mapping is verified. No hosted decisions or signed dossiers are fabricated. The ledger can already store start/settlement decision and dossier IDs; local receipts are unsigned.
+`POLICY_GATE=decionis` selects the hosted adapter for real channels. It uses the [confirmed Decionis API contract](https://docs.decionis.com/.well-known/openapi.json), applies local prerequisites, binds grants to the action, claims them once, and records execution receipts. A Twitch host click satisfies local approval; a hosted hold requires the authority's own verified approval. The local judge room stays independent of hosted credentials.
+
+Set `DECIONIS_ORG_ID`, `DECIONIS_API_KEY`, and `DECIONIS_ENFORCE_API_KEY` as documented in [hosted authority setup](docs/authority.md). New hosted installs default to `DECIONIS_MODE=SHADOW`; `ENFORCEMENT` is explicit, and the legacy label `live` maps to it. The AgentSafe gateway is a separate reverse proxy, not an authority API base.
+
+The adapter retains the **120 ms** stream budget. Account-backed probes verified signed dossiers and a grant → claim → receipt lifecycle, including a remotely refused replay. Observed requests took **153–834 ms**, so this environment currently exercises the specified failure paths at the production budget. Local fallbacks remain unsigned; they never borrow a hosted dossier ID. See [verification evidence](docs/authority.md#verification).
 
 ## Content and privacy
 

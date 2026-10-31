@@ -102,7 +102,11 @@ export function streamFixture() {
   const app = Fastify();
   registerStream(app, { rooms, live, actions });
   app.addHook('onClose', async () => {
-    ledger.close();
+    try {
+      await rooms.close();
+    } finally {
+      ledger.close();
+    }
   });
   const start = () =>
     rooms.raid('10', {

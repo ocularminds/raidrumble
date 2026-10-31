@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app.js';
 
 describe('host API and real match integration', () => {
@@ -53,6 +53,47 @@ describe('host API and real match integration', () => {
     };
     expect((await runtime.app.inject(request)).statusCode).toBe(200);
     expect((await runtime.app.inject(request)).statusCode).toBe(409);
+  });
+
+  it('reports a hosted hold as pending and keeps approval details off the public overlay', async () => {
+    const room = await runtime.rooms.demo('stranger-raid');
+    const decisionId = room.view().pending!.decisionId;
+    const held = room.gate.getDecision(decisionId)!;
+    vi.spyOn(room.gate, 'approve').mockResolvedValue({
+      ...held,
+      source: 'decionis',
+      approval: { url: 'https://approval.example/request/held', expiresAt: 9000 },
+      grant: { id: 'private-grant', expiresAt: 9000 },
+    });
+    const response = await runtime.app.inject({
+      method: 'POST',
+      url: '/api/approve/demo',
+      payload: { decisionId },
+    });
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      accepted: false,
+      pending: { decisionId, expiresAt: 10000 },
+    });
+    const overlay = (await runtime.app.inject('/api/arena/demo')).json();
+    expect(overlay.decision).not.toHaveProperty('approval');
+    expect(overlay.decision).not.toHaveProperty('grant');
+    const dashboard = (await runtime.app.inject('/api/status/demo')).json();
+    expect(dashboard.approval).toEqual({
+      source: 'decionis',
+      url: 'https://approval.example/request/held',
+      expiresAt: 9000,
+    });
+    now = 10000;
+    expect(
+      (
+        await runtime.app.inject({
+          method: 'POST',
+          url: '/api/approve/demo',
+          payload: { decisionId },
+        })
+      ).statusCode,
+    ).toBe(409);
   });
 
   it('demonstrates ESCALATE again after an earlier stranger simulation is settled', async () => {

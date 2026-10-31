@@ -1,77 +1,26 @@
 import { randomUUID } from 'node:crypto';
-import {
-  createContext,
-  type Assignment,
-  type MatchView,
-  type RoundResult,
-} from '@raidrumble/engine';
-import { ContentService, type Channels, type ContentGenerator } from '@raidrumble/content';
+import { createContext, type Assignment, type MatchView } from '@raidrumble/engine';
+import { ContentService } from '@raidrumble/content';
 import {
   LocalPolicyGate,
   DecionisGate,
   PolicyExecutor,
+  type ConfigurablePolicyGate,
   type Decision,
-  type PolicyConfig,
 } from '@raidrumble/policy';
 import type { ArenaView, DashboardView } from '../model.js';
-import { Game, type GameChat } from './game.js';
+import { Game } from './game.js';
 import { SpecialService } from './specials.js';
 import { HostHistory } from './history.js';
 import { MatchArchive } from './archive.js';
 import { GlowHistory } from './glow.js';
-
-export interface RaidRequest {
-  channels: Channels;
-  raiderLogin: string;
-  accountAgeDays: number | null;
-  hostFollowsRaider: boolean | null;
-  viewers: number;
-  homeMembers?: number;
-  hasPriorMatch?: boolean;
-  raidsLastHour?: number;
-  simulated?: boolean;
-  collab?: { participants: { id: string; login: string }[]; sessionParticipantIds: string[] };
-  roster?: ReadonlySet<string>;
-  chatterDelta?: ReadonlySet<string>;
-  occurredAt?: number;
-  onComplete?: () => void;
-}
-
-export interface RoomChat extends GameChat {
-  occurredAt?: number;
-}
-
-export interface CompletedMatch {
-  matchId: string;
-  hostId: string;
-  raiderId: string;
-  results: readonly RoundResult[];
-  startDecision: Decision;
-  settleDecision: Decision;
-  atMs: number;
-  hostName: string;
-  raiderName: string;
-}
-
-export interface RoomOptions {
-  hostId: string;
-  config: PolicyConfig;
-  now?: () => number;
-  generator?: ContentGenerator;
-  quiet?: boolean;
-  gateKind?: 'local' | 'decionis';
-  history?: HostHistory;
-  onSettle?: (result: CompletedMatch) => void | boolean | Promise<void | boolean>;
-  onRetention?: (
-    matchId: string,
-    count: number,
-    decision: Decision,
-  ) => void | boolean | Promise<void | boolean>;
-}
+import type { RaidRequest, RoomChat, RoomOptions } from '../models/room.js';
+import { decisionView } from '../models/decision.js';
+export type { CompletedMatch, RaidRequest, RoomChat, RoomOptions } from '../models/room.js';
 
 /** One authority, one active match and one host's ephemeral channel state. */
 export class Room {
-  readonly gate: LocalPolicyGate;
+  readonly gate: ConfigurablePolicyGate;
   readonly executor: PolicyExecutor;
   private readonly content: ContentService;
   private readonly clock: () => number;
@@ -104,6 +53,7 @@ export class Room {
     this.clock = options.now ?? Date.now;
     const Gate = options.gateKind === 'decionis' ? DecionisGate : LocalPolicyGate;
     this.gate = new Gate(options.config, {
+      ...options.decionis,
       now: this.clock,
       ...(options.quiet ? { logger: () => undefined } : {}),
     });
@@ -178,9 +128,14 @@ export class Room {
     const epoch = this.epoch;
     try {
       const decision = await this.gate.approve(decisionId, actorId);
-      if (epoch !== this.epoch) return false;
-      this.pending = undefined;
+      if (epoch !== this.epoch || this.pending !== pending || this.clock() >= pending.expiresAt)
+        return false;
       this.lastDecision = decision;
+      if (decision.verdict === 'ESCALATE') {
+        this.pending = { ...pending, decision };
+        return false;
+      }
+      this.pending = undefined;
       const result = await this.executor.execute(decision, () =>
         this.begin(pending.request, decision, epoch),
       );
@@ -336,13 +291,25 @@ export class Room {
     this.names.clear();
   }
 
+  approval(): DashboardView['approval'] {
+    const pending = this.pending;
+    if (!pending || pending.expiresAt <= this.clock()) return undefined;
+    return {
+      source: pending.decision.source,
+      expiresAt: Math.min(pending.expiresAt, pending.decision.approval?.expiresAt ?? Infinity),
+      ...(pending.decision.approval ? { url: pending.decision.approval.url } : {}),
+    };
+  }
+
   view(): ArenaView {
     const match = this.game?.view() ?? this.lastMatch;
     const glow = this.glows.view();
-    const decision = this.lastDecision && {
-      ...this.lastDecision,
-      action: this.gate.getRequest(this.lastDecision.decisionId)?.action ?? 'rumble.start',
-    };
+    const decision =
+      this.lastDecision &&
+      decisionView(
+        this.lastDecision,
+        this.gate.getRequest(this.lastDecision.decisionId)?.action ?? 'rumble.start',
+      );
     return {
       hostId: this.options.hostId,
       ...this.labels,

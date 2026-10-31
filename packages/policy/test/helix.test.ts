@@ -88,9 +88,11 @@ describe('Helix executor', () => {
     expect(transport).not.toHaveBeenCalled();
   });
 
-  it('uses declared failure defaults without pretending the hosted mapping is implemented', async () => {
+  it('uses declared failure defaults when hosted runtime credentials are absent', async () => {
     const gate = new DecionisGate(undefined, { logger: () => undefined });
-    expect(await gate.authorize(request())).toMatchObject({
+    const req = request();
+    req.payload.hasPriorMatch = true;
+    expect(await gate.authorize(req)).toMatchObject({
       verdict: 'ESCALATE',
       source: 'local',
       reasonCodes: ['POLICY_ERROR'],

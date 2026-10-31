@@ -156,7 +156,8 @@ export interface Decision {
   reasonCodes: string[];
   decisionId: string;
   dossierId?: string;
-  grant?: { id: string; expiresAt: number }; // present when an ESCALATE was approved
+  grant?: { id: string; expiresAt: number }; // local approval, or any hosted enforcement ALLOW
+  approval?: { url: string; expiresAt: number }; // hosted managed approval, when available
   mode: 'shadow' | 'enforce';
   source: 'decionis' | 'local';
 }
@@ -165,15 +166,21 @@ export interface PolicyGate {
   authorize(req: ActionRequest): Promise<Decision>;
   approve(decisionId: string, approverTwitchId: string): Promise<Decision>; // ESCALATE → grant
   claimGrant(grantId: string): Promise<boolean>; // single use
+  finalizeGrant?(
+    grantId: string,
+    outcome: 'COMMITTED' | 'FAILED' | 'INDETERMINATE',
+  ): Promise<boolean>;
 }
 ```
 
-- **`DecionisGate`:** calls the AgentSafe gateway at `DECIONIS_GATEWAY_URL` (e.g. `https://raidrumble.decionisedge.com`) or the API at `DECIONIS_API_BASE` (`https://api.decionis.com`) with `DECIONIS_API_KEY`.
-  - **Do not guess the wire format.** Implement the mapping in `packages/policy/src/decionis/mapping.ts` from the Decionis API reference (decision-evaluation endpoint).
-  - Until it is confirmed, leave a single `TODO(decionis-wire)` and keep the adapter behind the interface.
+- **`DecionisGate`:** uses `DECIONIS_API_BASE` (`https://api.decionis.com`) with the appropriately scoped runtime API key. `DECIONIS_GATEWAY_URL` is a separate onboarded reverse proxy, not an alternative authority API base; never send its tenant key to the authority API or send an authority key to the proxy.
+  - The wire contract is confirmed from [Decision Evaluation](https://docs.decionis.com/decision-evaluation) and [OpenAPI 0.6.0](https://docs.decionis.com/.well-known/openapi.json). Keep its mapping in `packages/policy/src/decionis/mapping.ts` and cite the source in adapter documentation.
+  - Shadow protocol evaluation uses `/v1/protocol/evaluate-decision` where the key permits it. Bound execution uses `/v1/authority/grants`, atomic `/grants/{id}/claims`, and `/grants/{id}/receipts`. Every hosted enforcement ALLOW requires its own live, matching grant and claim.
+  - Host-local policy remains a prerequisite. A Twitch click can satisfy a local escalation; it cannot fabricate hosted approval evidence. Hosted holds stay closed until remotely verified managed approval returns executable authority. Expose an approved HTTPS approval link when available and keep the original host deadline.
+  - Keep bearer execution/claim tokens private. Preserve hosted decision/dossier IDs; label operational fallbacks as local/unsigned. A receipt failure after the effect must never cause the effect to be retried or be reported as unexecuted.
 - **`LocalPolicyGate`:** evaluates `policy/raidrumble.policy.yaml` in-process with identical semantics: shadow/enforce, ESCALATE and grants, reason codes. It writes unsigned local decision records.
   - This is what judges and CI use: **no Decionis account is required to run RaidRumble.**
-- **`executor.ts`:** the only module allowed to perform side effects. Signature: `execute(decision, effect)`. It checks the verdict, claims the grant if present, then runs the effect.
+- **`executor.ts`:** the only module allowed to perform side effects. Signature: `execute(decision, effect)`. It checks the verdict, claims the grant if present, then runs the effect and finalizes hosted authority. Freeze the bound Helix descriptor before asynchronous work; uncertain effect outcomes finalize as `INDETERMINATE`.
 
 ### 4.3 Governed actions (initial policy)
 
@@ -307,11 +314,15 @@ Adding a new round means one new file and one registry line. No other changes.
 
 ```
 TWITCH_CLIENT_ID=  TWITCH_CLIENT_SECRET=  TWITCH_BOT_USER_ID=  PUBLIC_BASE_URL=
+TWITCH_AUTH_URL=             # optional exact registered callback URI
 OPENAI_API_KEY=    OPENAI_MODEL=
 POLICY_GATE=local            # local | decionis
 DECIONIS_API_BASE=https://api.decionis.com
+DECIONIS_ORG_ID=
 DECIONIS_GATEWAY_URL=        # e.g. https://raidrumble.decionisedge.com
 DECIONIS_API_KEY=
+DECIONIS_ENFORCE_API_KEY=
+DECIONIS_MODE=SHADOW         # SHADOW | ENFORCEMENT; legacy live maps to enforcement
 ```
 
 ## 6. Commands (keep these working at all times)
@@ -393,13 +404,13 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T9** Fusion Boss module + content templates + overlay view
 - [x] **T10** Know Your Host module + `packages/content` (LLM + templates + `content.render` gate)
 - [x] **T11** Rivalry ledger + rematch banner + Afterglow widget/retention stat
-- [ ] **T12** DecionisGate adapter (behind `POLICY_GATE=decionis`) + dossier IDs in ledger
+- [x] **T12** DecionisGate adapter (behind `POLICY_GATE=decionis`) + dossier IDs in ledger
 - [x] **T13** Warlord phone page + specials; Channel Points Reinforcements
 - [x] **T14** Collab Rumble (Shared Chat bonus mode) start from dashboard
 - [x] **T15** Rivalry network map; mirror URL
 - [x] **T16** README with install, OBS setup, judge mode; polish pass on overlay readability
 
-Completed checkboxes describe implementation verified locally. Real Twitch host/bot delivery needs an account-backed smoke test. T12 stays open until the hosted decision-evaluation wire mapping is confirmed; its isolated adapter currently exercises the specified local failure rules.
+Completed checkboxes describe verified implementation. T12's wire mapping, signed dossiers and grant/claim/receipt lifecycle are now confirmed against the hosted authority. The 120 ms stream budget remains enforced; observed hosted round trips exceed it in this environment. Account-backed Twitch smoke-test scope and remaining live-raid checks are recorded in `docs/verify.md`.
 
 ## 12. Build log (Codex appends a one-line summary here; details go in docs/codex.md)
 
@@ -415,3 +426,5 @@ Completed checkboxes describe implementation verified locally. Real Twitch host/
 - 2026-10-31 · Integration audit: 361 tests across 41 files pass; includes unknown-fact failover, stale approvals, identity, replay, shutdown persistence, repeatable stranger demos and source conventions.
 - 2026-10-31 · T16: Completed README/round guide, multiline quiz choices, boss celebration, mobile verification and a verified 114-second local demo with real parallel-build evidence; lint, typecheck, build, formatting and all four simulations pass.
 - 2026-10-31 · Checkpoint: Prepared the verified local implementation for a commit and PR at the user's request; excluded credentials, runtime data and local captures before starting hosted integration work.
+- 2026-10-31 · T12: Confirmed OpenAPI mapping, signed dossiers and one-use hosted grants/claims/receipts; preserved managed holds and unsigned ledger fallback. The real 120 ms adapter correctly times out on observed 153–834 ms round trips.
+- 2026-10-31 · Hosted/Twitch integration: Parallel policy, OAuth/readiness and persistence work passes 497 tests in 52 files, lint, typecheck, production builds, formatting and all four judge scenarios; first PR merged, follow-up moves to `codex/authority`.

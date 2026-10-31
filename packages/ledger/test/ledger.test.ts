@@ -135,6 +135,20 @@ describe('auditable rivalry ledger', () => {
     expect(() => ledger.retention('later', 1.5)).toThrow();
   });
 
+  it('persists local retention as unsigned without allowing a later write to clear the flag', () => {
+    const path = databasePath();
+    const ledger = track(new Ledger(path));
+    ledger.settle(record({ startDossierId: 'start', settleDossierId: 'settle' }));
+    expect(ledger.match('match1')?.unsigned).toBe(false);
+    expect(ledger.retention('match1', 8, true)).toBe(true);
+    ledger.retention('match1', 9, false);
+    ledger.retention('match1', 10);
+    ledger.close();
+    const reopened = track(new Ledger(path));
+    expect(reopened.match('match1')).toMatchObject({ unsigned: true, retention: 10 });
+    expect(reopened.pair('host', 'raider')?.matches).toBe(1);
+  });
+
   it('keeps optional gated channel names on graph nodes and pair summaries', () => {
     const ledger = track(new Ledger());
     ledger.settle(record({ hostName: 'Garden Keeper', raiderName: 'Speed Runner' }));

@@ -8,12 +8,24 @@ import type { LiveOptions } from '../model.js';
 export class FakeClient {
   started = false;
   stopped = false;
-  constructor(readonly options: EventSubOptions) {}
+  status: 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'stopped' = 'idle';
+  readonly options: EventSubOptions;
+  constructor(options: EventSubOptions) {
+    this.options = {
+      ...options,
+      onSession: (sessionId, context) => {
+        this.status = 'connected';
+        return options.onSession(sessionId, context);
+      },
+    };
+  }
   start(): void {
     this.started = true;
+    this.status = 'connecting';
   }
   stop(): void {
     this.stopped = true;
+    this.status = 'stopped';
   }
 }
 
@@ -78,7 +90,18 @@ export function fixture(overrides: Partial<LiveOptions> = {}) {
     if (url.pathname === '/helix/channels/followed')
       return Response.json({ data: [], pagination: {}, total: 0 });
     if (url.pathname === '/helix/eventsub/subscriptions')
-      return Response.json({ data: [{ id: 'subscription' }] }, { status: 202 });
+      return Response.json(
+        {
+          data: [
+            {
+              id: 'subscription',
+              status: 'enabled',
+              ...(JSON.parse(String(init?.body)) as Record<string, unknown>),
+            },
+          ],
+        },
+        { status: 202 },
+      );
     throw new Error('Unexpected fixture request');
   });
   const service = new LiveService({
