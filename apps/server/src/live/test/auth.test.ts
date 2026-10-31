@@ -10,7 +10,7 @@ describe('Live Twitch authentication', () => {
   it('keeps judge mode usable when no Twitch credentials are configured', async () => {
     const f = fixture({ clientSecret: undefined });
     expect((await f.app.inject({ url: '/auth/host' })).statusCode).toBe(503);
-    expect(f.service.status('demo')).toEqual({
+    expect(f.service.status('demo')).toMatchObject({
       configured: false,
       hostConnected: false,
       botConnected: false,
@@ -36,11 +36,28 @@ describe('Live Twitch authentication', () => {
     );
     expect(f.service.authorizeHost(request(flow.cookie), '10')).toBe(true);
     expect(f.service.authorizeHost(request(flow.cookie), '30')).toBe(false);
-    expect(f.service.status('10')).toEqual({
+    expect(f.service.status('10')).toMatchObject({
       configured: true,
       hostConnected: true,
       botConnected: false,
     });
+    await f.app.close();
+  });
+
+  it('connects a host before a bot is configured and refuses an unbound bot login', async () => {
+    const f = fixture({ botUserId: undefined });
+    const host = await login(f, 'host', '10');
+    expect(host.response.statusCode).toBe(302);
+    expect(f.service.status('10')).toMatchObject({
+      configured: true,
+      hostConnected: true,
+      botConnected: false,
+    });
+    const count = f.fetcher.mock.calls.length;
+    const bot = await begin(f, 'bot', host.cookie);
+    expect(bot.response.statusCode).toBe(503);
+    expect(bot.response.body).toContain('bot account');
+    expect(f.fetcher.mock.calls).toHaveLength(count);
     await f.app.close();
   });
 

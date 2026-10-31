@@ -29,6 +29,7 @@ export interface Decision {
   decisionId: string;
   dossierId?: string;
   grant?: { id: string; expiresAt: number };
+  approval?: { url: string; expiresAt: number };
   mode: PolicyMode;
   source: 'decionis' | 'local';
 }
@@ -37,6 +38,18 @@ export interface PolicyGate {
   authorize(req: ActionRequest): Promise<Decision>;
   approve(decisionId: string, approverTwitchId: string): Promise<Decision>;
   claimGrant(grantId: string): Promise<boolean>;
+  finalizeGrant?(grantId: string, outcome: GrantOutcome): Promise<boolean>;
+}
+
+export type GrantOutcome = 'COMMITTED' | 'FAILED' | 'INDETERMINATE';
+
+export interface ConfigurablePolicyGate extends PolicyGate {
+  getDecision(id: string): Decision | undefined;
+  getRequest(id: string): ActionRequest | undefined;
+  listRecords(): DecisionRecord[];
+  getConfig(): PolicyConfig;
+  setMode(action: ActionName, mode: PolicyMode): void;
+  updateLists(lists: Partial<PolicyConfig['lists']>): void;
 }
 
 export interface PredicateRule {

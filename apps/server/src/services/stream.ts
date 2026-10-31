@@ -28,8 +28,8 @@ interface LiveRun {
 
 interface RewardRequest {
   decision: Decision;
-  write: HelixWrite;
-  expiresAt: number;
+  readonly write: HelixWrite;
+  readonly expiresAt: number;
 }
 
 export class StreamError extends Error {
@@ -123,6 +123,7 @@ export class StreamActions {
   }
 
   rewardStatus(hostId: string) {
+    const pending = this.activeReward(hostId);
     return {
       eligible: Boolean(this.live.profile(hostId)?.affiliate),
       configured: this.rooms.rewardIds.has(hostId),
@@ -132,6 +133,7 @@ export class StreamActions {
         prompt: 'During Siege: +1 input weight for 10 seconds. Once per match.',
         skipQueue: true,
       },
+      ...(pending ? { pending: rewardView(pending) } : {}),
     };
   }
 
@@ -153,10 +155,13 @@ export class StreamActions {
         403,
         'Channel Points require a connected Affiliate or Partner channel.',
       );
-    const existing = this.rewards.get(hostId);
-    if (existing && existing.expiresAt > this.now())
-      return { ...status, decision: existing.decision, expiresAt: existing.expiresAt };
+    const existing = this.activeReward(hostId);
+    if (existing) return { ...status, ...rewardView(existing) };
     const room = this.rooms.get(hostId);
+    const config = room.gate.getConfig();
+    const expiresAt =
+      this.now() +
+      (config.actions['rewards.configure'].otherwise.timeoutMs ?? config.params.escalateTimeoutMs);
     const write = TwitchWrites.reward(
       hostId,
       status.reward.title,
@@ -178,12 +183,9 @@ export class StreamActions {
     });
     if (decision.verdict === 'BLOCK' || failed(decision))
       throw new StreamError(409, 'Reward setup was blocked by policy.');
-    const config = room.gate.getConfig();
-    const expiresAt =
-      this.now() +
-      (config.actions['rewards.configure'].otherwise.timeoutMs ?? config.params.escalateTimeoutMs);
+    if (expiresAt <= this.now()) throw new StreamError(409, 'This reward approval expired.');
     this.rewards.set(hostId, { decision, write: structuredClone(write), expiresAt });
-    return { ...status, decision, expiresAt };
+    return { ...status, decision: structuredClone(decision), expiresAt };
   }
 
   async approveReward(hostId: string, actorId: string, decisionId: string) {
@@ -198,18 +200,15 @@ export class StreamActions {
   }
 
   private async configureReward(hostId: string, actorId: string, decisionId: string) {
-    const pending = this.rewards.get(hostId);
-    if (
-      actorId !== hostId ||
-      !pending ||
-      pending.decision.decisionId !== decisionId ||
-      pending.expiresAt <= this.now()
-    )
+    const pending = this.activeReward(hostId);
+    if (actorId !== hostId || !pending || pending.decision.decisionId !== decisionId)
       throw new StreamError(409, 'This reward approval expired or was already used.');
-    this.rewards.delete(hostId);
-    if (!this.live.profile(hostId)?.affiliate)
+    if (!this.live.profile(hostId)?.affiliate) {
+      this.rewards.delete(hostId);
       throw new StreamError(403, 'Channel Points eligibility is no longer available.');
+    }
     const credentials = await this.live.credentials(hostId, 'host');
+    this.requireReward(hostId, pending);
     if (!credentials) throw new StreamError(401, 'Reconnect the host to configure Channel Points.');
     const room = this.rooms.get(hostId);
     let decision: Decision;
@@ -219,8 +218,17 @@ export class StreamActions {
           ? await room.gate.approve(decisionId, actorId)
           : pending.decision;
     } catch {
-      throw new StreamError(409, 'This reward approval expired or was already used.');
+      this.requireReward(hostId, pending);
+      throw new StreamError(503, 'Approval could not be checked. Try again before it expires.');
     }
+    this.requireReward(hostId, pending);
+    if (decision.verdict === 'ESCALATE' && !failed(decision)) {
+      pending.decision = decision;
+      return { configured: false as const, pending: true as const, ...rewardView(pending) };
+    }
+    this.rewards.delete(hostId);
+    if (decision.verdict !== 'ALLOW' || failed(decision))
+      throw new StreamError(409, 'Reward setup was blocked by policy.');
     const result = await room.executor.executeHelix(decision, pending.write, credentials);
     if (!result.executed) throw new StreamError(502, 'Twitch could not configure this reward.');
     const rewardId =
@@ -228,7 +236,21 @@ export class StreamActions {
       (pending.write.method === 'PATCH' ? this.rooms.rewardIds.get(hostId) : undefined);
     if (!rewardId) throw new StreamError(502, 'Twitch did not return the configured reward ID.');
     this.rooms.rewardIds.set(hostId, rewardId);
-    return { configured: true, rewardId };
+    return { configured: true as const, rewardId };
+  }
+
+  private activeReward(hostId: string): RewardRequest | undefined {
+    const pending = this.rewards.get(hostId);
+    if (pending && pending.expiresAt <= this.now()) {
+      this.rewards.delete(hostId);
+      return undefined;
+    }
+    return pending;
+  }
+
+  private requireReward(hostId: string, pending: RewardRequest): void {
+    if (this.activeReward(hostId) !== pending)
+      throw new StreamError(409, 'This reward approval expired or was already used.');
   }
 
   async collab(hostId: string, requestedPeer?: string) {
@@ -399,6 +421,11 @@ function failed(decision: Decision): boolean {
   return decision.reasonCodes.some(
     (reason) => reason === 'POLICY_TIMEOUT' || reason === 'POLICY_ERROR',
   );
+}
+
+/** Served only by authenticated host reward routes; no execution or claim bearer is exposed. */
+function rewardView(pending: RewardRequest) {
+  return { decision: structuredClone(pending.decision), expiresAt: pending.expiresAt };
 }
 
 function idFrom(value: unknown): string | undefined {

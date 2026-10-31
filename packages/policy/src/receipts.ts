@@ -6,6 +6,8 @@ interface Receipt {
   executed: boolean;
   expiresAt?: number;
   failureRule?: FailureRule;
+  executionDeadline?: number;
+  claimUnavailable?: boolean;
 }
 const books = new WeakMap<PolicyGate, DecisionBook>();
 
@@ -18,6 +20,8 @@ function equal(left: Decision, right: Decision): boolean {
     left.dossierId === right.dossierId &&
     left.grant?.id === right.grant?.id &&
     left.grant?.expiresAt === right.grant?.expiresAt &&
+    left.approval?.url === right.approval?.url &&
+    left.approval?.expiresAt === right.approval?.expiresAt &&
     left.reasonCodes.length === right.reasonCodes.length &&
     left.reasonCodes.every((code, index) => code === right.reasonCodes[index])
   );
@@ -27,7 +31,10 @@ function equal(left: Decision, right: Decision): boolean {
 export class DecisionBook {
   private readonly receipts = new Map<string, Receipt>();
 
-  constructor(gate: PolicyGate) {
+  constructor(
+    gate: PolicyGate,
+    private readonly now: () => number = Date.now,
+  ) {
     books.set(gate, this);
   }
 
@@ -74,6 +81,26 @@ export class DecisionBook {
 
   failureRule(id: string): FailureRule | undefined {
     return this.receipts.get(id)?.failureRule;
+  }
+
+  limitExecution(id: string, deadline: number): void {
+    const receipt = this.receipts.get(id);
+    if (receipt) receipt.executionDeadline = deadline;
+  }
+
+  executionBudget(id: string): number | undefined {
+    const receipt = this.receipts.get(id);
+    const expiry = receipt?.executionDeadline ?? receipt?.decision.grant?.expiresAt;
+    return expiry === undefined ? undefined : expiry - this.now();
+  }
+
+  markClaimUnavailable(id: string): void {
+    const receipt = this.receipts.get(id);
+    if (receipt) receipt.claimUnavailable = true;
+  }
+
+  claimFailure(id: string): 'GRANT_UNAVAILABLE' | 'GRANT_INVALID_OR_USED' {
+    return this.receipts.get(id)?.claimUnavailable ? 'GRANT_UNAVAILABLE' : 'GRANT_INVALID_OR_USED';
   }
 
   accepts(decision: Decision): boolean {

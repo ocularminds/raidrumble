@@ -144,12 +144,14 @@ export class Ledger {
     return { nodes, edges };
   }
 
-  retention(matchId: string, count: number): boolean {
+  retention(matchId: string, count: number, unsigned = false): boolean {
     if (!Number.isSafeInteger(count) || count < 0)
       throw new Error('Retention must be a nonnegative integer.');
+    if (typeof unsigned !== 'boolean') throw new Error('Unsigned marker must be boolean.');
     return (
-      this.database.prepare('UPDATE matches SET retention=? WHERE match_id=?').run(count, matchId)
-        .changes > 0
+      this.database
+        .prepare('UPDATE matches SET retention=?, unsigned=MAX(unsigned,?) WHERE match_id=?')
+        .run(count, Number(unsigned), matchId).changes > 0
     );
   }
 

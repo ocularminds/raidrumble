@@ -148,6 +148,123 @@ describe('Warlord and stream action routes', () => {
     await f.app.close();
   });
 
+  it('retains a hosted reward hold across checks and exposes it only to its host', async () => {
+    const f = streamFixture();
+    const room = f.rooms.get('10');
+    const original = await f.actions.prepareReward('10');
+    const next = await room.gate.authorize(room.gate.getRequest(original.decision.decisionId)!);
+    const held = {
+      ...next,
+      source: 'decionis' as const,
+      approval: { url: 'https://presence.example/review/reward', expiresAt: 60_000 },
+    };
+    const approve = vi.spyOn(room.gate, 'approve');
+    approve.mockResolvedValueOnce(held).mockResolvedValueOnce(held);
+    const check = (decisionId: string) =>
+      f.app.inject({
+        method: 'POST',
+        url: '/api/rewards/10/approve',
+        headers: { 'x-user': '10' },
+        payload: { decisionId },
+      });
+
+    f.setNow(12_000);
+    const first = await check(original.decision.decisionId);
+    expect(first.statusCode).toBe(202);
+    expect(first.json()).toMatchObject({
+      configured: false,
+      pending: true,
+      decision: held,
+      expiresAt: original.expiresAt,
+    });
+    const status = await f.app.inject({ url: '/api/rewards/10', headers: { 'x-user': '10' } });
+    expect(status.headers['cache-control']).toBe('private, no-store');
+    expect(status.json()).toMatchObject({
+      pending: { decision: held, expiresAt: original.expiresAt },
+    });
+    const outsider = await f.app.inject({ url: '/api/rewards/10', headers: { 'x-user': '99' } });
+    expect(outsider.statusCode).toBe(401);
+    expect(outsider.body).not.toContain(held.approval.url);
+    expect((await check(held.decisionId)).json()).toMatchObject({
+      configured: false,
+      expiresAt: original.expiresAt,
+    });
+    expect(f.fetcher).not.toHaveBeenCalled();
+    expect((await check(held.decisionId)).json()).toMatchObject({ configured: true });
+    expect(f.fetcher).toHaveBeenCalledOnce();
+    expect(f.actions.rewardStatus('10')).not.toHaveProperty('pending');
+    await f.app.close();
+  });
+
+  it.each(['credentials', 'approval'] as const)(
+    'rechecks the original reward deadline after awaiting %s',
+    async (boundary) => {
+      const f = streamFixture();
+      const room = f.rooms.get('10');
+      const proposal = await f.actions.prepareReward('10');
+      const approved = { ...proposal.decision, verdict: 'ALLOW' as const };
+      const authorize = vi.spyOn(room.gate, 'approve').mockImplementation(async () => {
+        if (boundary === 'approval') f.setNow(proposal.expiresAt);
+        return approved;
+      });
+      if (boundary === 'credentials') {
+        vi.mocked(f.live.credentials).mockImplementationOnce(async () => {
+          f.setNow(proposal.expiresAt);
+          return { clientId: 'client', accessToken: 'hostToken', fetch: f.fetcher };
+        });
+      }
+      const execute = vi.spyOn(room.executor, 'executeHelix').mockResolvedValue({
+        executed: true,
+        value: { data: [{ id: 'reward1' }] },
+      });
+      await expect(
+        f.actions.approveReward('10', '10', proposal.decision.decisionId),
+      ).rejects.toMatchObject({ statusCode: 409 });
+      if (boundary === 'credentials') expect(authorize).not.toHaveBeenCalled();
+      expect(execute).not.toHaveBeenCalled();
+      expect(f.actions.rewardStatus('10')).not.toHaveProperty('pending');
+      expect(f.rooms.rewardIds.has('10')).toBe(false);
+      await f.app.close();
+    },
+  );
+
+  it('never restarts the reward countdown after slow initial authorization', async () => {
+    const f = streamFixture();
+    const gate = f.rooms.get('10').gate;
+    const original = gate.authorize.bind(gate);
+    vi.spyOn(gate, 'authorize').mockImplementationOnce(async (request) => {
+      const decision = await original(request);
+      f.setNow(15_000);
+      return decision;
+    });
+    const proposal = await f.actions.prepareReward('10');
+    expect(proposal.expiresAt).toBe(20_000);
+    await f.app.close();
+  });
+
+  it('removes a terminally blocked reward without attempting a Twitch write', async () => {
+    const f = streamFixture();
+    const room = f.rooms.get('10');
+    const proposal = await f.actions.prepareReward('10');
+    vi.spyOn(room.gate, 'approve').mockResolvedValue({
+      ...proposal.decision,
+      verdict: 'BLOCK',
+      source: 'decionis',
+      reasonCodes: ['APPROVAL_DENIED'],
+    });
+    const execute = vi.spyOn(room.executor, 'executeHelix');
+    await expect(
+      f.actions.approveReward('10', '10', proposal.decision.decisionId),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(execute).not.toHaveBeenCalled();
+    expect(f.fetcher).not.toHaveBeenCalled();
+    expect(f.actions.rewardStatus('10')).not.toHaveProperty('pending');
+    await expect(
+      f.actions.approveReward('10', '10', proposal.decision.decisionId),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    await f.app.close();
+  });
+
   it('starts Collab Rumble only for a verified member of the current Shared Chat', async () => {
     const f = streamFixture();
     const path = '/api/collab/10';

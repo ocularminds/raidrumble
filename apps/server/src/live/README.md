@@ -4,9 +4,23 @@
 raid enrichment, and ephemeral roster capture. It does not create a match or
 publish raw chat/display text to overlays.
 
-The constructor needs Twitch client ID/secret, configured bot user ID,
-`baseUrl`, `dashboardUrl`, and callbacks documented in `model.ts`. Missing
-credentials leave judge mode usable and return HTTP 503 for Twitch login.
+The constructor needs Twitch client ID/secret, `baseUrl`, `dashboardUrl`, and
+callbacks documented in `model.ts`. A configured bot user ID is required only
+for bot login. Missing application credentials leave judge mode usable and return
+HTTP 503 for Twitch login.
+
+`resolveTwitchConfig(env, baseUrl)` reads `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`
+first, with `TWITCH_AUTH_CLIENT` / `TWITCH_AUTH_SECRET` as fallbacks. It reads
+`TWITCH_BOT_USER_ID` without inferring an account. `TWITCH_AUTH_URL`, when set, is
+the exact registered callback URI, never a Twitch token or authorization endpoint.
+
+Call `await live.startCallbackRelay()` after the API listens. For a callback on a
+different local port, this starts one listener bound to loopback. Only GET on the
+configured callback path redirects to the fixed API `/auth/callback` route; other
+paths, methods, hostile Host headers, and duplicate OAuth fields are rejected.
+Unknown query fields are discarded. The callback listener serves no API routes,
+sets no-store/no-referrer, and closes with Fastify. Callback URLs on a different
+external origin are rejected. Same-origin callback paths are registered directly.
 
 `register(app)` adds these routes and stops connections when Fastify closes:
 
@@ -53,8 +67,10 @@ match. No roster or token persistence is implemented.
 
 `credentials(hostId, 'host' | 'bot')` is for trusted server services that need to
 call the policy executor. Never serialize its result to an API or WebSocket.
-`status(hostId)` reports configuration and authenticated connections; it is not
-a claim that a real Twitch subscription or raid has been verified.
+`status(hostId)` reports application configuration and authenticated connections;
+`configured` does not require a bot ID. It is not a claim that a real Twitch
+subscription or raid has been verified. Deliberately choosing the same account
+for host and bot is supported, with separate role-scoped tokens and connections.
 
 Validation uses Fastify injection, mocked Twitch HTTP/socket clients, and the
 real local policy gate/executor. Real account scopes, EventSub delivery, bot

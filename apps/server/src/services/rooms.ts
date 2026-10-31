@@ -1,4 +1,4 @@
-import { defaultPolicy, type PolicyConfig } from '@raidrumble/policy';
+import { defaultPolicy, type DecionisOptions, type PolicyConfig } from '@raidrumble/policy';
 import { demoChannels, type ChannelProfile, type ContentGenerator } from '@raidrumble/content';
 import { randomUUID } from 'node:crypto';
 import { Ledger, RegularStore } from '@raidrumble/ledger';
@@ -17,6 +17,7 @@ export interface RoomsOptions {
   regulars?: RegularStore;
   regularsPath?: string;
   gateKind?: 'local' | 'decionis';
+  decionis?: DecionisOptions;
 }
 
 export class Rooms {
@@ -55,10 +56,12 @@ export class Rooms {
       generator: this.options.generator,
       quiet: this.options.quiet,
       now: this.options.now,
-      gateKind: this.options.gateKind,
+      gateKind: profile.id === 'demo' ? 'local' : this.options.gateKind,
+      decionis: profile.id === 'demo' ? undefined : this.options.decionis,
       history: new HostHistory(profile.id, this.regulars, this.options.now ?? Date.now),
       onSettle: (result) => this.settle(result),
-      onRetention: (matchId, count) => this.options.ledger.retention(matchId, count),
+      onRetention: (matchId, count, decision) =>
+        this.options.ledger.retention(matchId, count, decision.source === 'local'),
     });
     const saved = this.options.settings.get(profile.id);
     if (saved) room.configure(saved);

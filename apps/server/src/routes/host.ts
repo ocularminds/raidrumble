@@ -22,6 +22,7 @@ export function registerHost(app: FastifyInstance, { rooms, live, overlayBase }:
     const room = rooms.get(hostId);
     return {
       arena: room.view(),
+      approval: room.approval(),
       settings: room.settings(),
       decisions: room.gate
         .listRecords()
@@ -59,10 +60,14 @@ export function registerHost(app: FastifyInstance, { rooms, live, overlayBase }:
           return reply.code(409).send({ error: 'Shared Chat changed. Start a new challenge.' });
         }
       }
-      const accepted = await rooms.get(hostId).approve(request.body.decisionId, hostId);
-      return accepted
-        ? { accepted }
-        : reply.code(409).send({ error: 'This challenge expired or was already answered.' });
+      const room = rooms.get(hostId);
+      const originalId = room.view().pending?.decisionId;
+      const accepted = await room.approve(request.body.decisionId, hostId);
+      if (accepted) return { accepted };
+      const pending = room.view().pending;
+      if (pending && originalId === request.body.decisionId && room.approval())
+        return reply.code(202).send({ accepted: false, pending, approval: room.approval() });
+      return reply.code(409).send({ error: 'This challenge expired or was already answered.' });
     },
   );
 

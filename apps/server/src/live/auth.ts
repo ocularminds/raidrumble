@@ -31,15 +31,20 @@ export class LiveAuth {
         this.begin(role, request, reply),
       );
     }
-    app.get('/auth/callback', { logLevel: 'silent' }, (request, reply) =>
-      this.callback(request, reply),
-    );
+    const callbackPath = new URL(this.options.redirectUri ?? '/auth/callback', this.options.baseUrl)
+      .pathname;
+    for (const path of new Set(['/auth/callback', callbackPath]))
+      app.get(path, { logLevel: 'silent' }, (request, reply) => this.callback(request, reply));
   }
 
   private begin(role: OAuthRole, request: FastifyRequest, reply: FastifyReply) {
     this.privateResponse(reply);
     if (!this.oauth)
       return reply.code(503).send({ error: 'Configure Twitch credentials to connect a channel.' });
+    if (role === 'bot' && !this.options.botUserId)
+      return reply
+        .code(503)
+        .send({ error: 'Configure a Twitch bot account ID before connecting the bot.' });
     const query = request.query as Record<string, unknown>;
     const hostId = this.sessions.identity(request, 'host')?.userId;
     if (role === 'bot' && (!hostId || !this.sessions.trustedOrigin(request)))

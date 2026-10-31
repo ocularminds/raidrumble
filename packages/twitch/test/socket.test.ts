@@ -104,18 +104,78 @@ describe('EventSubClient', () => {
     client.stop();
   });
 
-  it('reconnects and asks to resubscribe after the keepalive deadline', async () => {
+  it('reconnects and asks to resubscribe after the keepalive deadline and bounded grace', async () => {
     const { client, sockets, onSession } = setup();
     sockets[0]!.welcome();
     await vi.advanceTimersByTimeAsync(9_000);
     sockets[0]!.emit('session_keepalive', {}, 'keepalive');
     await vi.advanceTimersByTimeAsync(9_000);
     expect(sockets).toHaveLength(1);
-    await vi.advanceTimersByTimeAsync(2_100);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(sockets[0]!.close).toHaveBeenCalledOnce();
+    expect(client.status).toBe('reconnecting');
+    await vi.advanceTimersByTimeAsync(1_000);
     expect(sockets).toHaveLength(2);
     sockets[1]!.welcome('new');
     await vi.advanceTimersByTimeAsync(0);
     expect(onSession).toHaveBeenLastCalledWith('new', { reconnected: false });
+    client.stop();
+  });
+
+  it('keeps one session when healthy keepalives arrive just after the advertised interval', async () => {
+    const { client, sockets, onSession } = setup();
+    sockets[0]!.welcome();
+    for (const delay of [10_005, 10_400, 10_125]) {
+      await vi.advanceTimersByTimeAsync(delay);
+      expect(sockets[0]!.close).not.toHaveBeenCalled();
+      sockets[0]!.emit('session_keepalive', {}, `keepalive-${delay}`);
+    }
+    expect(client.status).toBe('connected');
+    expect(sockets).toHaveLength(1);
+    expect(onSession).toHaveBeenCalledOnce();
+    client.stop();
+  });
+
+  it('recovers from genuine silence at most two seconds beyond the advertised interval', async () => {
+    const { client, sockets, onSession } = setup();
+    sockets[0]!.welcome();
+    await vi.advanceTimersByTimeAsync(11_999);
+    expect(sockets[0]!.close).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sockets[0]!.close).toHaveBeenCalledOnce();
+    expect(client.status).toBe('reconnecting');
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(sockets).toHaveLength(2);
+    sockets[1]!.welcome('recovered');
+    expect(onSession).toHaveBeenLastCalledWith('recovered', { reconnected: false });
+    client.stop();
+  });
+
+  it('does not extend an unwelcomed connection with keepalive grace or unsolicited keepalives', async () => {
+    const { client, sockets, onSession } = setup();
+    await vi.advanceTimersByTimeAsync(9_000);
+    sockets[0]!.emit('session_keepalive', {});
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(sockets[0]!.close).toHaveBeenCalledOnce();
+    expect(onSession).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(sockets).toHaveLength(2);
+    client.stop();
+  });
+
+  it('keeps the healthy original session when a migration never receives a welcome', async () => {
+    const { client, sockets, onSession } = setup();
+    sockets[0]!.welcome('original');
+    sockets[0]!.emit('session_reconnect', {
+      session: { reconnect_url: 'wss://eventsub.wss.twitch.tv/ws?reconnect=opaque' },
+    });
+    await vi.advanceTimersByTimeAsync(9_000);
+    sockets[0]!.emit('session_keepalive', {});
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(sockets[1]!.close).toHaveBeenCalledOnce();
+    expect(sockets[0]!.close).not.toHaveBeenCalled();
+    expect(client.status).toBe('connected');
+    expect(onSession).toHaveBeenCalledOnce();
     client.stop();
   });
 

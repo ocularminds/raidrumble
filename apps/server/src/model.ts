@@ -1,4 +1,5 @@
 import type { MatchView } from '@raidrumble/engine';
+import type { LiveStatus } from './live/model.js';
 
 export type Scenario = 'normal' | 'stranger-raid' | 'hate-raid' | 'collab';
 
@@ -38,7 +39,8 @@ export interface DashboardView {
     reducedMotion: boolean;
     facts: readonly string[];
   };
-  twitch: { configured: boolean; hostConnected: boolean; botConnected: boolean };
+  twitch: LiveStatus;
+  approval?: { source: 'local' | 'decionis'; url?: string; expiresAt: number };
   overlayUrl: string;
   budgets?: { ram: 0 | 1; oil: 0 | 1; reinforcedUsers: number };
   shared?: readonly string[];

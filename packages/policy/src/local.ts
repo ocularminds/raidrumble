@@ -37,7 +37,7 @@ export class LocalPolicyGate implements PolicyGate {
     this.id = options.id ?? randomUUID;
     this.logger = options.logger ?? ((record) => console.info(JSON.stringify(record)));
     this.evaluator = options.evaluate ?? evaluateRules;
-    this.book = new DecisionBook(this);
+    this.book = new DecisionBook(this, this.now);
   }
 
   async authorize(request: ActionRequest): Promise<Decision> {

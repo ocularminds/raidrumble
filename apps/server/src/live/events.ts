@@ -10,6 +10,15 @@ import {
 import type { LiveAccount, LiveClient, LiveOptions, LiveProfile, LiveStatus } from './model.js';
 import { enrichRaid } from './profile.js';
 
+interface HostReadiness {
+  required: Set<string>;
+  confirmed: Set<string>;
+}
+interface EventReceipt {
+  count: number;
+  last: NonNullable<LiveStatus['lastEvent']>;
+}
+
 /** Routes authenticated channels; gameplay and viewer attribution remain in Room. */
 export class LiveEvents {
   private readonly hosts = new Map<string, LiveAccount>();
@@ -20,6 +29,11 @@ export class LiveEvents {
   private botClient?: LiveClient;
   private botSession?: string;
   private botSubscribed = new Set<string>();
+  private botConfirmed = new Set<string>();
+  private readonly hostReadiness = new Map<string, HostReadiness>();
+  private readonly received = new Map<string, EventReceipt>();
+  private readonly issues = new Map<string, { order: number; message: string }>();
+  private issueSequence = 0;
   private validationTimer?: ReturnType<typeof setInterval>;
 
   constructor(
@@ -32,6 +46,8 @@ export class LiveEvents {
     const hostId = account.identity.userId;
     this.clients.get(hostId)?.stop();
     this.hosts.set(hostId, account);
+    this.hostReadiness.delete(hostId);
+    this.received.delete(hostId);
     const client = this.create({
       onSession: async (sessionId, { reconnected }) => {
         if (this.hosts.get(hostId) !== account || account.revoked || reconnected) return;
@@ -39,7 +55,22 @@ export class LiveEvents {
         const plan = SubscriptionPlan.host(sessionId, hostId, this.options.botUserId ?? hostId, {
           rewards: account.profile.affiliate,
         }).filter((write) => write.body?.type !== 'channel.chat.message');
-        await Promise.all(plan.map((write) => this.subscribe(hostId, account, write, subscribed)));
+        const readiness = {
+          required: new Set(plan.map((write) => String(write.body?.type))),
+          confirmed: new Set<string>(),
+        };
+        this.hostReadiness.set(hostId, readiness);
+        this.issues.delete(`host:${hostId}`);
+        const current = () =>
+          this.hosts.get(hostId) === account &&
+          !account.revoked &&
+          this.hostReadiness.get(hostId) === readiness;
+        await Promise.all(
+          plan.map(async (write) => {
+            if (await this.subscribe(hostId, account, write, subscribed, current))
+              readiness.confirmed.add(String(write.body?.type));
+          }),
+        );
       },
       onNotification: (event) => this.hostEvent(hostId, account, event),
       onRevocation: () => {
@@ -67,12 +98,15 @@ export class LiveEvents {
     this.bot = account;
     this.botSession = undefined;
     this.botSubscribed = new Set();
+    this.botConfirmed = new Set();
     const client = this.create({
       onSession: async (sessionId, { reconnected }) => {
         if (this.bot !== account || account.revoked) return;
         this.botSession = sessionId;
+        this.issues.delete('bot');
         if (reconnected) return;
         this.botSubscribed = new Set();
+        this.botConfirmed = new Set();
         const channels = new Set([...this.hosts.keys(), ...this.raiders.keys()]);
         await Promise.all([...channels].map((channelId) => this.subscribeChat(channelId)));
       },
@@ -92,12 +126,48 @@ export class LiveEvents {
 
   status(hostId: string): LiveStatus {
     const host = this.hosts.get(hostId);
+    const hostConnected = Boolean(host && !host.revoked);
+    const botConnected = Boolean(this.bot && !this.bot.revoked);
+    const hostState = this.clients.get(hostId)?.status;
+    const botState = this.botClient?.status;
+    const readiness =
+      hostConnected && hostState === 'connected' ? this.hostReadiness.get(hostId) : undefined;
+    const hostEventsConnected = Boolean(
+      readiness?.required.size &&
+      [...readiness.required].every((type) => readiness.confirmed.has(type)),
+    );
+    const chatEventsConnected =
+      hostConnected && botConnected && botState === 'connected' && this.botConfirmed.has(hostId);
+    const receipt = this.received.get(hostId);
+    const issue = [`host:${hostId}`, `chat:${hostId}`, 'bot']
+      .map((key) => this.issues.get(key))
+      .filter((item) => item !== undefined)
+      .sort((a, b) => b.order - a.order)[0];
+    const interrupted =
+      (hostConnected && hostState === 'reconnecting') ||
+      (botConnected && botState === 'reconnecting');
+    const stopped =
+      (hostConnected && hostState === 'stopped') || (botConnected && botState === 'stopped');
+    const setupError =
+      issue?.message ??
+      (interrupted
+        ? 'Twitch event connection interrupted; reconnecting.'
+        : stopped
+          ? 'Twitch event connection stopped. Reconnect this account.'
+          : undefined);
     return {
-      configured: Boolean(
-        this.options.clientId && this.options.clientSecret && this.options.botUserId,
-      ),
-      hostConnected: Boolean(host && !host.revoked),
-      botConnected: Boolean(this.bot && !this.bot.revoked),
+      configured: Boolean(this.options.clientId && this.options.clientSecret),
+      hostConnected,
+      botConnected,
+      hostEventsConnected,
+      chatEventsConnected,
+      subscriptions: [
+        ...(readiness?.confirmed ?? []),
+        ...(chatEventsConnected ? ['channel.chat.message'] : []),
+      ].sort(),
+      eventCount: receipt?.count ?? 0,
+      ...(receipt ? { lastEvent: { ...receipt.last } } : {}),
+      ...(setupError ? { setupError } : {}),
     };
   }
 
@@ -142,6 +212,11 @@ export class LiveEvents {
     this.botClient = undefined;
     this.botSession = undefined;
     this.botSubscribed.clear();
+    this.botConfirmed.clear();
+    this.hostReadiness.clear();
+    this.received.clear();
+    this.issues.clear();
+    this.issueSequence = 0;
   }
 
   private create(options: EventSubOptions): LiveClient {
@@ -156,7 +231,17 @@ export class LiveEvents {
       broadcaster_user_id: channelId,
       user_id: bot.identity.userId,
     });
-    await this.subscribe(channelId, bot, write, this.botSubscribed);
+    const confirmed = this.botConfirmed;
+    const current = () =>
+      this.bot === bot &&
+      !bot.revoked &&
+      !account.revoked &&
+      this.botConfirmed === confirmed &&
+      (this.hosts.get(channelId) ?? this.raiders.get(channelId)) === account;
+    if (await this.subscribe(channelId, bot, write, this.botSubscribed, current)) {
+      confirmed.add(channelId);
+      this.issues.delete(`chat:${channelId}`);
+    }
   }
 
   private async subscribe(
@@ -164,10 +249,12 @@ export class LiveEvents {
     account: LiveAccount,
     write: HelixWrite,
     subscribed: Set<string>,
-  ): Promise<void> {
+    current: () => boolean,
+  ): Promise<boolean> {
     const key = `${channelId}:${String(write.body?.type)}`;
-    if (subscribed.has(key)) return;
+    if (!current() || subscribed.has(key)) return false;
     subscribed.add(key);
+    const scope = write.body?.type === 'channel.chat.message' ? 'chat' : 'host';
     try {
       const gate = this.options.getGate(channelId);
       const decision = await gate.authorize({
@@ -179,21 +266,28 @@ export class LiveEvents {
         channel: { hostId: channelId },
         payload: { subscription: write.body, botUserId: this.options.botUserId },
       });
+      if (!current()) return false;
       const result = await new PolicyExecutor(gate).executeHelix(decision, write, {
         clientId: this.options.clientId ?? '',
         accessToken: await account.tokens.accessToken(),
         ...(this.options.fetch ? { fetch: this.options.fetch } : {}),
       });
-      if (!result.executed) {
+      if (!current()) return false;
+      if (!result.executed || !this.enabled(result.value, write)) {
         subscribed.delete(key);
         this.report(
           channelId,
           'A Twitch event subscription could not be enabled. Check authorization and policy.',
+          scope,
         );
+        return false;
       }
+      return true;
     } catch {
       subscribed.delete(key);
-      this.report(channelId, 'Twitch event setup failed. Reconnect this channel.');
+      if (current())
+        this.report(channelId, 'Twitch event setup failed. Reconnect this channel.', scope);
+      return false;
     }
   }
 
@@ -205,17 +299,24 @@ export class LiveEvents {
     if (this.hosts.get(hostId) !== account || account.revoked) return;
     try {
       if (event.type === 'raid' && event.hostId === hostId) {
+        this.rememberEvent(hostId, event.type);
         await this.options.onRaid(
           hostId,
           await enrichRaid(this.options, account, event, this.now()),
         );
       } else if (event.type === 'shared' && event.channelId === hostId) {
+        this.rememberEvent(hostId, event.type);
         await this.options.onShared(hostId, event.phase === 'end' ? [] : [...event.participants]);
       } else if (event.type === 'redemption' && event.channelId === hostId) {
+        this.rememberEvent(hostId, event.type);
         await this.options.onRedemption?.(hostId, event);
       }
     } catch {
-      this.report(hostId, 'A Twitch event could not be processed; the current match continues.');
+      this.report(
+        hostId,
+        'A Twitch event could not be processed; the current match continues.',
+        'event',
+      );
     }
   }
 
@@ -223,7 +324,10 @@ export class LiveEvents {
     if (event.type !== 'chat') return;
     try {
       const host = this.hosts.get(event.channelId);
-      if (host && !host.revoked) await this.options.onChat(event.channelId, event);
+      if (host && !host.revoked) {
+        this.rememberEvent(event.channelId, event.type);
+        await this.options.onChat(event.channelId, event);
+      }
       const raider = this.raiders.get(event.channelId);
       if (
         raider &&
@@ -237,6 +341,7 @@ export class LiveEvents {
       this.report(
         event.channelId,
         'A chat event could not be processed; the current match continues.',
+        'event',
       );
     }
   }
@@ -285,7 +390,7 @@ export class LiveEvents {
               this.clients.get(account.identity.userId)?.stop();
             this.clearRoster(account.identity.userId);
             this.report(
-              account.identity.userId,
+              this.bot === account ? '' : account.identity.userId,
               'Twitch authorization expired. Reconnect this account.',
             );
           }
@@ -293,11 +398,52 @@ export class LiveEvents {
     );
   }
 
-  private report(hostId: string, message: string): void {
+  private rememberEvent(hostId: string, type: TwitchNotification['type']): void {
+    this.received.set(hostId, {
+      count: (this.received.get(hostId)?.count ?? 0) + 1,
+      last: { type, atMs: this.now() },
+    });
+  }
+
+  private enabled(value: unknown, write: HelixWrite): boolean {
+    const data = object(value).data;
+    if (!Array.isArray(data)) return false;
+    const expected = write.body ?? {};
+    return data.some((raw: unknown) => {
+      const entry = object(raw);
+      const condition = object(entry.condition);
+      const transport = object(entry.transport);
+      return (
+        typeof entry.id === 'string' &&
+        entry.id.length > 0 &&
+        entry.status === 'enabled' &&
+        entry.type === expected.type &&
+        entry.version === expected.version &&
+        Object.entries(object(expected.condition)).every(
+          ([key, value]) => condition[key] === value,
+        ) &&
+        transport.method === 'websocket' &&
+        transport.session_id === object(expected.transport).session_id
+      );
+    });
+  }
+
+  private report(hostId: string, message: string, scope: 'host' | 'chat' | 'event' = 'host'): void {
+    if (scope !== 'event')
+      this.issues.set(hostId ? `${scope}:${hostId}` : 'bot', {
+        order: ++this.issueSequence,
+        message,
+      });
     try {
       this.options.onError?.(hostId, message);
     } catch {
       /* Diagnostics never end a match. */
     }
   }
+}
+
+function object(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }

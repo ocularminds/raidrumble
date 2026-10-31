@@ -3,16 +3,22 @@ import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import { Ledger } from '@raidrumble/ledger';
 import { OpenAiContent } from '@raidrumble/content';
-import { DecionisGate, LocalPolicyGate, loadPolicy } from '@raidrumble/policy';
+import {
+  DecionisGate,
+  LocalPolicyGate,
+  loadPolicy,
+  type ConfigurablePolicyGate,
+} from '@raidrumble/policy';
 import { fileURLToPath } from 'node:url';
 import type { WebSocket } from 'ws';
 import { Rooms } from './services/rooms.js';
 import { SettingsStore } from './services/settings.js';
-import { LiveService } from './live/index.js';
+import { LiveService, resolveTwitchConfig } from './live/index.js';
 import { registerHost } from './routes/host.js';
 import { registerDemo } from './routes/demo.js';
 import { registerStream } from './routes/stream.js';
 import { StreamActions } from './services/stream.js';
+import { authorityConfig } from './services/authority.js';
 
 export interface AppOptions {
   ledgerPath?: string;
@@ -33,14 +39,16 @@ export async function createApp(options: AppOptions = {}) {
   const policy = await loadPolicy(
     fileURLToPath(new URL('../../../policy/raidrumble.policy.yaml', import.meta.url)),
   );
-  const gateKind = process.env.POLICY_GATE === 'decionis' ? 'decionis' : 'local';
-  const rosterGates = new Map<string, LocalPolicyGate>();
+  const { gateKind, initialMode, decionis } = authorityConfig(process.env);
+  if (initialMode) policy.defaults.mode = initialMode;
+  const rosterGates = new Map<string, ConfigurablePolicyGate>();
   const rooms = new Rooms({
     ledger,
     regularsPath: options.ledgerPath ?? ':memory:',
     settings: new SettingsStore(options.settingsPath),
     config: policy,
     gateKind,
+    decionis,
     quiet: options.quiet,
     now: options.now,
     generator:
@@ -76,9 +84,7 @@ export async function createApp(options: AppOptions = {}) {
     });
   });
   const live = new LiveService({
-    clientId: process.env.TWITCH_CLIENT_ID ?? '',
-    clientSecret: process.env.TWITCH_CLIENT_SECRET ?? '',
-    botUserId: process.env.TWITCH_BOT_USER_ID ?? '',
+    ...resolveTwitchConfig(process.env, baseUrl, dashboardUrl),
     baseUrl,
     dashboardUrl,
     onHost: (profile) => {
@@ -128,7 +134,10 @@ export async function createApp(options: AppOptions = {}) {
       let gate = rosterGates.get(hostId);
       if (!gate) {
         const Gate = gateKind === 'decionis' ? DecionisGate : LocalPolicyGate;
-        gate = new Gate(policy, { ...(options.quiet ? { logger: () => undefined } : {}) });
+        gate = new Gate(policy, {
+          ...decionis,
+          ...(options.quiet ? { logger: () => undefined } : {}),
+        });
         rosterGates.set(hostId, gate);
       }
       return gate;
@@ -195,7 +204,7 @@ export async function createApp(options: AppOptions = {}) {
         }, 100);
   app.addHook('onClose', async () => {
     clearInterval(timer);
-    live.stop();
+    await live.stop();
     for (const client of clients.keys()) client.close();
     try {
       await rooms.close();

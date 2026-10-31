@@ -14,6 +14,10 @@ import type {
 import { loadProfile } from './profile.js';
 import { BrowserSessions } from './sessions.js';
 import { WarlordLinks } from './warlord.js';
+import { resolveCallback } from './config.js';
+import { CallbackRelay } from './relay.js';
+
+export { resolveTwitchConfig } from './config.js';
 
 export type {
   LiveOptions,
@@ -32,22 +36,30 @@ export class LiveService {
   private readonly events: LiveEvents;
   private readonly auth: LiveAuth;
   private readonly now: () => number;
+  private readonly relay: CallbackRelay;
 
   constructor(private readonly options: LiveOptions) {
     this.now = options.now ?? Date.now;
+    const callback = resolveCallback(options.baseUrl, options.redirectUri, options.dashboardUrl);
+    this.relay = new CallbackRelay(
+      options.baseUrl,
+      callback.redirectUri,
+      () => options.onError?.('', 'Twitch callback listener needs attention.'),
+      options.dashboardUrl,
+    );
     this.sessions = new BrowserSessions(options.baseUrl, options.dashboardUrl, this.now);
     this.links = new WarlordLinks(options.baseUrl, options.dashboardUrl, this.now);
-    if (options.clientId && options.clientSecret && options.botUserId)
+    if (options.clientId && options.clientSecret)
       this.oauth = new OAuthClient({
         clientId: options.clientId,
         clientSecret: options.clientSecret,
-        redirectUri: new URL('/auth/callback', options.baseUrl).toString(),
+        redirectUri: callback.redirectUri,
         ...(options.fetch ? { fetch: options.fetch } : {}),
         now: this.now,
       });
     this.events = new LiveEvents(options, this.oauth, this.now);
     this.auth = new LiveAuth(
-      options,
+      { ...options, redirectUri: callback.redirectUri },
       this.oauth,
       this.sessions,
       this.links,
@@ -59,8 +71,13 @@ export class LiveService {
   register(app: FastifyInstance): void {
     this.auth.register(app);
     app.addHook('onClose', async () => {
-      this.stop();
+      await this.stop();
     });
+  }
+
+  /** Start after the main API has bound its port; no Twitch request is made here. */
+  startCallbackRelay(): Promise<boolean> {
+    return this.oauth ? this.relay.start() : Promise.resolve(false);
   }
 
   authorizeHost(request: FastifyRequest, hostId: string): boolean {
@@ -117,10 +134,11 @@ export class LiveService {
     return this.events.credentials(hostId, role);
   }
 
-  stop(): void {
+  stop(): Promise<void> {
     this.events.stop();
     this.sessions.clear();
     this.links.clear();
+    return this.relay.stop();
   }
 
   private async accept(role: OAuthRole, login: AuthenticatedLogin): Promise<void> {
