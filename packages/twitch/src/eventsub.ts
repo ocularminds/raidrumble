@@ -159,7 +159,9 @@ export class EventSubClient {
 
   private watch(connection: Connection): void {
     if (connection.watchdog) clearTimeout(connection.watchdog);
-    connection.watchdog = setTimeout(() => this.lost(connection), connection.timeoutMs + 1);
+    // Twitch sends keepalives after its quiet interval; allow bounded delivery/scheduling jitter.
+    const graceMs = connection.welcomed ? 2_000 : 1;
+    connection.watchdog = setTimeout(() => this.lost(connection), connection.timeoutMs + graceMs);
   }
 
   private lost(connection: Connection): void {
