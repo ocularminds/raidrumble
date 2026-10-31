@@ -35,6 +35,7 @@ export function registerStream(app: FastifyInstance, { live, actions }: StreamRo
         loginUrl: value.loginUrl,
         raiderName: value.room.view().raiderName,
         simulated: value.simulated,
+        matchId: value.room.matchId,
       };
     } catch (error) {
       return failure(reply, error);

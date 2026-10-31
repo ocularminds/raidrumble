@@ -115,7 +115,7 @@ After the end card, a small corner widget shows **"Raiders still here: N"**: tag
 
 ### 3.7 Surfaces
 
-- **Overlay:** an OBS browser source at 1920×1080 with a transparent background. Readable from across a room: minimum 48px for keywords, 32px for names.
+- **Overlay:** an OBS browser source at 1920×1080 with a transparent background. Default **Lower Third** keeps the upper 70% of the stream visible; **Side Rail** and **Full Arena** are host-selectable. Readable from across a room: minimum 48px for keywords, 32px for names. Counted Siege/Boss inputs may show short-lived, gated contributor names. Original CC0 sound cues are opt-in and off by default.
 - **Host dashboard:** connect Twitch, allow-list and blocklist, stream facts, the Accept prompt, the Boiling Oil button, Shadow Mode report, and the rivalry map.
 - **Warlord phone page:** opened from a link the bot posts in chat. Requires Twitch login matching `from_broadcaster_user_id`. One big button per special.
 - **Mirror URL (stretch):** if the raider stays live, their own overlay can show the same match read-only.
@@ -135,7 +135,7 @@ After the end card, a small corner widget shows **"Raiders still here: N"**: tag
   - The gate evaluates and records, but does not block.
   - The dashboard shows a "would have blocked" report.
   - The host switches individual actions to enforce.
-- **Latency budget: 120 ms.** On timeout or error, apply the action's `onFailure` rule (§4.3). Never hang the stream.
+- **Latency budgets:** keep **120 ms** for in-match actions. The setup actions `rumble.start`, `rumble.start.collab`, `rewards.configure`, and `events.subscribe` may use a configured **1,500 ms** allowance so hosted authorization can complete. EventSub setup must complete before fresh live raids can arrive. Bind the allowance to the captured action and apply its remaining deadline to an immediate grant claim; a later valid human approval gets a fresh bounded claim allowance without extending the original approval deadline. Receipt finalization is bounded separately and must not delay or retry an executed effect. While authorizing a start, show a compact, authored **RAID INCOMING** state. On timeout or error, apply the action's `onFailure` rule (§4.3).
 - **Receipts:** when the hosted Decionis authority is used, each decision yields an Ed25519-signed Decision Dossier, verifiable offline with `npx -y @decionis/verify`. The ledger stores the dossier IDs.
 
 ### 4.2 Gate implementations (`packages/policy`)
@@ -409,8 +409,22 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T14** Collab Rumble (Shared Chat bonus mode) start from dashboard
 - [x] **T15** Rivalry network map; mirror URL
 - [x] **T16** README with install, OBS setup, judge mode; polish pass on overlay readability
+- [x] **T17 / E1** Lower Third default, Side Rail and Full Arena layouts with saved host preference
+- [x] **T18 / E2** Follow calls-to-action on both end-card outcomes and the closing bot message
+- [x] **T19 / E3** Gated live contributor feedback and top-three streaks during Siege and Boss
+- [x] **T20 / E4** Deterministic last-ten-second Raider comeback in the normal demo
+- [x] **T21 / E5** Per-action setup budgets, incoming-raid state and hosted start evidence
+- [x] **T22 / E6** Unknown new-account raid blocked in the hate-raid demonstration
+- [x] **T23 / E7** Plausible factual quiz distractors
+- [x] **T24 / E8** General category-based boss names without a demo-only special case
+- [x] **T25 / E9** Original CC0 sound cues, off by default, with dashboard control
+- [x] **T26 / E10** Explicit trust-next-time selection tied to a successful host approval
+- [x] **T27 / E11** First-run setup, meaningful names, readable policy activity and compact empty states
+- [x] **T28 / E12** Consistent US copy, feature names, arrows and Warlord feedback
+- [ ] **T29** Current Devpost/README, committed media, accurate evidence and public default branch
+- [ ] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
 
-Completed checkboxes describe verified implementation. T12's wire mapping, signed dossiers and grant/claim/receipt lifecycle are now confirmed against the hosted authority. The 120 ms stream budget remains enforced; observed hosted round trips exceed it in this environment. Account-backed Twitch smoke-test scope and remaining live-raid checks are recorded in `docs/verify.md`.
+Completed checkboxes describe verified implementation. The enhancement checkout passes 609 tests across 71 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. T29/T30 remain open pending final source/media publication, video upload and Devpost submission.
 
 ## 12. Build log (Codex appends a one-line summary here; details go in docs/codex.md)
 
@@ -422,10 +436,24 @@ Completed checkboxes describe verified implementation. T12's wire mapping, signe
 - 2026-10-31 · T7/T8: Added four judge scenarios, host dashboard, preferences, 10-second approvals and policy activity; all scenarios verified locally.
 - 2026-10-31 · T11/T15: Added SQLite pair aggregates/receipts, rematches, persistent retention, salted regular hashes, rivalry graph and read-only mirror.
 - 2026-10-31 · T13/T14: Added Warlord/host specials, verified redemption budgets, explicit reward setup approval and Shared Chat collab controls.
-- 2026-10-31 · T12 remains open: dossier fields and adapter boundary exist; no hosted wire format or signed receipts were invented.
-- 2026-10-31 · Integration audit: 361 tests across 41 files pass; includes unknown-fact failover, stale approvals, identity, replay, shutdown persistence, repeatable stranger demos and source conventions.
+- 2026-10-31 · Historical T12 boundary checkpoint: T12 remained open; dossier fields and adapter boundary existed, and no hosted wire format or signed receipts were invented.
+- 2026-10-31 · Historical integration checkpoint: 361 tests across 41 files passed; included unknown-fact failover, stale approvals, identity, replay, shutdown persistence, repeatable stranger demos and source conventions.
 - 2026-10-31 · T16: Completed README/round guide, multiline quiz choices, boss celebration, mobile verification and a verified 114-second local demo with real parallel-build evidence; lint, typecheck, build, formatting and all four simulations pass.
 - 2026-10-31 · Checkpoint: Prepared the verified local implementation for a commit and PR at the user's request; excluded credentials, runtime data and local captures before starting hosted integration work.
 - 2026-10-31 · T12: Confirmed OpenAPI mapping, signed dossiers and one-use hosted grants/claims/receipts; preserved managed holds and unsigned ledger fallback. The real 120 ms adapter correctly times out on observed 153–834 ms round trips.
-- 2026-10-31 · Hosted/Twitch integration: Parallel policy, OAuth/readiness and persistence work passes 497 tests in 52 files, lint, typecheck, production builds, formatting and all four judge scenarios; first PR merged, follow-up moves to `codex/authority`.
-- 2026-10-31 · Twitch live verification: Approved host/bot OAuth, five enabled EventSub subscriptions and one real incoming chat event confirmed; fixed keepalive jitter with four regressions, bringing the suite to 501 passing tests in 52 files. Follow-up changes and evidence are documented in PR #2.
+- 2026-10-31 · Historical hosted/Twitch checkpoint: Parallel policy, OAuth/readiness and persistence work passed 497 tests in 52 files, lint, typecheck, production builds, formatting and all four judge scenarios; first PR merged, follow-up moved to `codex/authority`.
+- 2026-10-31 · Historical Twitch connection checkpoint: Host/bot OAuth, five enabled EventSub subscriptions and one real incoming chat event confirmed; four keepalive regressions brought that checkpoint to 501 passing tests in 52 files, documented in PR #2.
+- 2026-10-31 · T17/E1: Added saved Lower Third, Side Rail and Full Arena layouts; compact geometry and readability checked in tests and actual UI captures.
+- 2026-10-31 · T18/E2: Added mutual follow invitations to both end-card outcomes and bounded closing bot messages.
+- 2026-10-31 · T19/E3: Added gated counted-input contributor pops and top-three streaks in Siege/Boss, with expiry and round-boundary tests.
+- 2026-10-31 · T20/E4: Made the normal local demo a deterministic last-ten-second Raider comeback while retaining the home-favored collab scenario.
+- 2026-10-31 · T21/E5: Added captured setup/claim budgets and incoming state; isolated hosted Room.raid became active at 1,475 ms with verified signed binding, while receipt finalization remained unconfirmed after timeout.
+- 2026-10-31 · T22/E6: Changed the local hate-raid demonstration to an unfamiliar two-day-old account blocked by RAIDER_ACCOUNT_TOO_NEW.
+- 2026-10-31 · T23/E7: Added plausible curated category distractors while preserving factual, supplied-data question construction and authored fallbacks.
+- 2026-10-31 · T24/E8: Replaced the demo-specific boss name with general category-based composition and deterministic fallback tests.
+- 2026-10-31 · T25/E9: Added original CC0 sound cues with deduplication, a saved opt-in toggle and sound off by default.
+- 2026-10-31 · T26/E10: Added unchecked trust-next-time selection, persisted only after successful host approval, with expiry, replay and concurrent-edit protection.
+- 2026-10-31 · T27/E11: Added first-run setup, safely gated Shared Chat names, readable policy activity and compact empty states.
+- 2026-10-31 · T28/E12: Standardized US copy, feature names, action arrows and used-state Warlord feedback.
+- 2026-10-31 · Final enhancement validation: 609 tests across 71 files, lint, strict TypeScript, production builds and four headless scenarios passed; staging regressions closed the short-claim-lease gap without retrying effects.
+- 2026-10-31 · T29/T30 progress: Captured two public babafesti Test Raid Real Chat sessions using one account, with a loss then boss victory and an Afterglow sample of 1; genuine Codex clips show the contract and later parallel enhancement work. Documentation reflects those limits; final video/publication/submission remain open.

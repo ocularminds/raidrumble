@@ -1,16 +1,19 @@
 import {
   AttributionEngine,
+  Contributors,
   InputParser,
   MatchTimeline,
   rounds,
   type Assignment,
   type AttributionState,
+  type ContributorState,
   type MatchContext,
   type MatchState,
   type MatchView,
   type SpecialEffect,
   type Team,
 } from '@raidrumble/engine';
+import { demoParticipants } from './demo.js';
 
 export interface GameChat {
   userId: string;
@@ -42,6 +45,8 @@ export class Game {
   private readonly timeline = new MatchTimeline(rounds);
   private readonly attribution = new AttributionEngine();
   private readonly parser = new InputParser();
+  private readonly contributors = new Contributors();
+  private feedback?: ContributorState;
   private state: MatchState;
   private assignments: AttributionState = this.attribution.start();
   private nextInputAt = 0;
@@ -60,7 +65,10 @@ export class Game {
   }
 
   view(): MatchView {
-    return this.timeline.view(this.state);
+    const view = this.timeline.view(this.state);
+    return this.feedback && view.status === 'playing'
+      ? { ...view, feedback: this.contributors.view(this.feedback, view.elapsedMs) }
+      : view;
   }
   now(): number {
     return this.state.context.nowMs;
@@ -122,6 +130,13 @@ export class Game {
     if (result.counted) {
       this.assignments = this.attribution.lock(this.assignments, message.userId);
       this.active[team].add(message.userId);
+      if (round.gate || round.boss) {
+        this.feedback = this.contributors.count(
+          this.feedback ?? this.contributors.start(round.id),
+          input,
+          this.state.elapsedMs,
+        );
+      }
     }
     return result.counted;
   }
@@ -136,13 +151,19 @@ export class Game {
 
   private advance(atMs: number): void {
     this.state = this.timeline.tick(this.state, Math.max(0, atMs - this.now()), this.context());
+    if (this.feedback) {
+      this.feedback =
+        this.state.status === 'playing' && this.feedback.roundId === this.state.active.id
+          ? this.contributors.tick(this.feedback, this.state.elapsedMs)
+          : undefined;
+    }
   }
 
   private synthetic(): void {
     const round = this.view().round;
     if (!round || round.phase !== 'active') return;
     for (const team of ['home', 'raiders'] as const) {
-      const count = team === 'home' ? 20 : 15;
+      const count = demoParticipants(team, round, Boolean(this.options.collab));
       for (let index = 0; index < count; index++) {
         let text = round.keyword;
         if (round.quiz) {

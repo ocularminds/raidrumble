@@ -124,4 +124,32 @@ export interface MatchView {
   readonly winner: Winner;
   readonly teams: TeamValues;
   readonly degraded: boolean;
+  /** Ephemeral counted moves only; omitted for quiz/end card. Never persist this projection. */
+  readonly feedback?: MatchFeedback;
+}
+
+export interface ContributorPop {
+  /** Round-local sequence; pair with feedback.roundId. Never a viewer identifier. */
+  readonly id: number;
+  readonly team: Team;
+  /** Only display names already approved through ContentService.name. */
+  readonly displayName: string;
+  /** One counted move, independent of reinforcement weight or boss damage. */
+  readonly amount: 1;
+  /** Match-relative timestamps; the pop disappears after 1,600 ms. */
+  readonly atMs: number;
+  readonly expiresAtMs: number;
+}
+
+export interface ContributorStreak {
+  readonly displayName: string;
+  /** Consecutive 2-second windows with a counted move; a missed window resets it. */
+  readonly count: number;
+}
+
+export interface MatchFeedback {
+  readonly roundId: string;
+  /** At most six recent moves per team, ordered oldest first. */
+  readonly pops: readonly ContributorPop[];
+  readonly streaks: Readonly<Record<Team, readonly ContributorStreak[]>>;
 }

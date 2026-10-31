@@ -13,6 +13,8 @@ export class DecionisTransport {
     body?: unknown,
     id?: string,
   ): Promise<unknown> {
+    if (!Number.isFinite(budgetMs) || budgetMs <= 0)
+      throw new AuthorityFailure('unavailable', true);
     const base = new URL(this.options.apiBase ?? 'https://api.decionis.com');
     const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
     if (
@@ -85,7 +87,7 @@ export class DecionisTransport {
               reject(new AuthorityFailure('unavailable', true));
               controller.abort();
             },
-            Math.max(1, Math.min(120, budgetMs)),
+            Math.max(1, Math.min(1500, budgetMs)),
           );
         }),
       ]);

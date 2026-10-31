@@ -2,10 +2,14 @@ import type { ArenaView } from '../../server/src/model.js';
 import type { MatchView, RoundView } from '@raidrumble/engine';
 import { Paint, palette } from './draw.js';
 import { Scenes } from './scenes.js';
+import { Compact } from './compact.js';
+import { Feedback } from './feedback.js';
 
 export class Arena {
   private readonly paint: Paint;
   private readonly scenes: Scenes;
+  private readonly compact: Compact;
+  private readonly feedback: Feedback;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -15,13 +19,22 @@ export class Arena {
     if (!ctx) throw new Error('Canvas 2D is unavailable.');
     this.paint = new Paint(ctx);
     this.scenes = new Scenes(this.paint);
+    this.compact = new Compact(this.paint);
+    this.feedback = new Feedback(this.paint);
   }
 
   draw(view: ArenaView | undefined, time: number): void {
     const p = this.paint;
     p.ctx.clearRect(0, 0, 1920, 1080);
-    if (!view || view.status === 'idle' || view.status === 'pending') {
-      if (this.preview) this.idle(view);
+    if (view?.status === 'incoming' || view?.status === 'pending') {
+      this.compact.notice(view);
+      return;
+    }
+    if (!view || view.status === 'idle') {
+      if (this.preview) {
+        if (view?.layout === 'full') this.idle(view);
+        else this.compact.notice(view);
+      }
       return;
     }
     if (view.status === 'afterglow') {
@@ -30,10 +43,14 @@ export class Arena {
     }
     const match = view.match;
     if (!match) return;
+    if (view.layout !== 'full') {
+      this.compact.draw(view);
+      return;
+    }
     p.panel(60, 42, 1800, 980, 40);
     this.header(view);
     if (match.status !== 'playing') {
-      this.endcard(match);
+      this.endcard(match, view);
       return;
     }
     const round = match.round;
@@ -44,8 +61,10 @@ export class Arena {
     else if (round.quiz) this.scenes.quiz(round);
     else if (round.boss) this.scenes.boss(round, motion);
     else p.wrap(round.instruction, 960, 470, 1400, 56);
+    this.feedback.pops(view, { home: [365, 663], raiders: [1555, 663] }, 430);
+    this.feedback.streaks(view, 250, 892, 1560);
     p.line(105, 915, 1815, 915, palette.line);
-    p.text('CHANGE TEAMS BEFORE YOUR FIRST MOVE', 124, 963, 27, palette.muted);
+    p.text('WRONG TEAM? SWITCH BEFORE YOUR FIRST MOVE', 124, 963, 25, palette.muted);
     p.text('!join home  ●', 1245, 963, 32, palette.home, 'center');
     p.text('!join raiders  ▲', 1630, 963, 32, palette.raiders, 'center');
   }
@@ -60,7 +79,9 @@ export class Arena {
     p.text(p.fit(view.raiderName, 450, 38), 1744, 137, 38, palette.white, 'right');
     p.text('RAIDRUMBLE', 960, 86, 32, palette.lime, 'center', 900);
     p.text(
-      view.rematch ?? (view.simulated ? 'LOCAL SIMULATION' : 'TWO COMMUNITIES. ONE ARENA.'),
+      view.practice === 'realchat'
+        ? 'TEST RAID · REAL TWITCH CHAT'
+        : (view.rematch ?? (view.simulated ? 'LOCAL SIMULATION' : 'TWO COMMUNITIES. ONE ARENA.')),
       960,
       133,
       25,
@@ -159,7 +180,7 @@ export class Arena {
     p.text('1920 × 1080  ·  OBS READY', 960, 951, 26, palette.muted, 'center');
   }
 
-  private endcard(match: MatchView): void {
+  private endcard(match: MatchView, view: ArenaView): void {
     const p = this.paint;
     const killed = match.results.some(
       (result) => result.roundId === 'fusion-boss' && result.winner === 'both',
@@ -207,7 +228,22 @@ export class Arena {
         );
       });
     }
-    p.text('STAY A WHILE. YOU’RE PART OF THE STORY NOW.', 960, 913, 32, palette.muted, 'center');
+    p.text(
+      p.fit(`▲ Raiders: follow ${view.hostName}`, 1540, 32),
+      960,
+      867,
+      32,
+      palette.raiders,
+      'center',
+    );
+    p.text(
+      p.fit(`● Home Guard: check out ${view.raiderName}`, 1540, 32),
+      960,
+      921,
+      32,
+      palette.home,
+      'center',
+    );
   }
 
   private afterglow(view: ArenaView): void {

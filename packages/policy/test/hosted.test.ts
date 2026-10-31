@@ -135,7 +135,7 @@ describe('hosted policy authorization', () => {
     expect((await new PolicyExecutor(gate).execute(decision, vi.fn())).executed).toBe(false);
   });
 
-  it('aborts at 120ms, discards late authority, and keeps a shadow start held', async () => {
+  it('aborts at 1500ms, discards late authority, and keeps a shadow start held', async () => {
     vi.useFakeTimers();
     const wire = new HostedFixture();
     const { gate } = wire.gate('shadow');
@@ -147,7 +147,7 @@ describe('hosted policy authorization', () => {
     const req = request();
     req.payload.raiderLogin = 'trusted';
     const pending = gate.authorize(req);
-    await vi.advanceTimersByTimeAsync(120);
+    await vi.advanceTimersByTimeAsync(1500);
     const decision = await pending;
     expect(decision).toMatchObject({
       source: 'local',

@@ -14,10 +14,12 @@ import type {
 } from './models.js';
 import { DecisionBook } from './receipts.js';
 import { evaluateRules } from './rules.js';
+import { actionBudget, approvalTimeout } from './budget.js';
 
 interface Grant {
   decisionId: string;
   expiresAt: number;
+  claimDeadline: number;
   used: boolean;
 }
 
@@ -60,7 +62,7 @@ export class LocalPolicyGate implements PolicyGate {
         new Promise<PolicyEvaluation>((_resolve, reject) => {
           timer = setTimeout(
             () => reject(new Error('POLICY_TIMEOUT')),
-            config.defaults.latencyBudgetMs,
+            actionBudget(config, req.action),
           );
         }),
       ]);
@@ -81,9 +83,7 @@ export class LocalPolicyGate implements PolicyGate {
       source: 'local',
     };
     const expiresAt =
-      decision.verdict === 'ESCALATE'
-        ? this.now() + (action.otherwise.timeoutMs ?? config.params.escalateTimeoutMs)
-        : undefined;
+      decision.verdict === 'ESCALATE' ? atMs + approvalTimeout(config, req.action) : undefined;
     this.book.add(req, decision, expiresAt, failureRule);
     this.record(req, decision, atMs, expiresAt);
     this.pruneGrants();
@@ -99,14 +99,22 @@ export class LocalPolicyGate implements PolicyGate {
     if (req.channel.hostId !== approverTwitchId) throw new Error('Invalid approver');
     if ((this.book.expiry(decisionId) ?? 0) <= this.now()) throw new Error('Approval expired');
     if (!this.book.accepts(decision)) throw new Error('Decision already executed');
-    const grant = { id: `grant:${this.id()}`, expiresAt: this.now() + 10_000 };
+    const grant = {
+      id: `grant:${this.id()}`,
+      expiresAt: this.book.expiry(decisionId) ?? 0,
+    };
     const approved: Decision = {
       ...decision,
       verdict: 'ALLOW',
       reasonCodes: [...decision.reasonCodes, 'HOST_APPROVED'],
       grant,
     };
-    this.grants.set(grant.id, { decisionId, expiresAt: grant.expiresAt, used: false });
+    this.grants.set(grant.id, {
+      decisionId,
+      expiresAt: grant.expiresAt,
+      claimDeadline: Math.min(grant.expiresAt, this.now() + actionBudget(this.config, req.action)),
+      used: false,
+    });
     this.book.replace(approved);
     this.record(req, approved, this.now());
     return structuredClone(approved);
@@ -114,7 +122,8 @@ export class LocalPolicyGate implements PolicyGate {
 
   async claimGrant(grantId: string): Promise<boolean> {
     const grant = this.grants.get(grantId);
-    if (!grant || grant.used || grant.expiresAt <= this.now()) return false;
+    if (!grant || grant.used || grant.expiresAt <= this.now() || grant.claimDeadline <= this.now())
+      return false;
     if (this.getDecision(grant.decisionId)?.grant?.id !== grantId) return false;
     grant.used = true;
     return true;

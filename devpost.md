@@ -1,206 +1,103 @@
-# RaidRumble: Devpost submission (Codex x TwitchCon Hackathon)
+# RaidRumble: Devpost submission copy
 
-> Working copy of every field on the Devpost form. Items in `[[double brackets]]` are placeholders to fill from the real build. **Before submitting, delete any feature line that did not ship.** The rules require the project to "function as depicted in the video and/or expressed in the text description."
->
-> **Deadline:** Mon 2 Nov 2026, 14:00 PST (23:00 Stockholm).
-
----
+This copy distinguishes implemented features from recorded evidence. The enhancement checkout passes 609 tests across 71 files. Public Twitch practice and genuine Codex-app clips have been captured; the final video upload, default-branch update and Devpost submission remain pending.
 
 ## Form fields
 
 **Project name:** RaidRumble
 
-**Elevator pitch (≤200 chars):**
-> Every Twitch raid becomes a 3-minute co-op showdown that gives raiders a reason to stay, with a policy gate so only welcome raids light up the arena.
+**Elevator pitch:** One raid. Three rounds. A reason to stay. RaidRumble turns welcomed Twitch raids into a three-minute chat showdown, with fair teams and policy checks before stream actions.
 
-**Built with:** typescript · node.js · fastify · twitch-eventsub · twitch-helix-api · twitch-cli · obs-browser-source · vite · canvas · sqlite · openai-api · decionis-agentsafe · openai-codex · vitest · pnpm
+**Built with:** TypeScript · Node.js · Fastify · Twitch EventSub · Twitch Helix API · OBS Browser Source · Vite · Canvas 2D · SQLite · better-sqlite3 · OpenAI API · Decionis / AgentSafe · OpenAI Codex · Vitest · pnpm
 
-**Try it out:**
-- Repo: `[[https://github.com/<you>/RaidRumble]]` (if private, share with testing@devpost.com)
-- Judge mode, no Twitch account needed: `pnpm i && pnpm sim`
+**Public repository:** <https://github.com/ocularminds/raidrumble> (default branch: `master`)
 
-**Video (YouTube, public, <3:00):** `[[https://youtu.be/...]]`
+**Try it:** `pnpm i`, then `pnpm dev`. Open <http://localhost:5174> and click **Launch Test Raid**. No account is required for judge mode.
 
-**Codex session ID:** `[[paste the ID of the single Codex thread the project was built in]]`
+**Demo video:** Publication pending. No public video URL has been supplied.
 
----
+**Codex session ID:** `01a1930a-c3f4-7b53-b90a-a523ae252545`
 
-## About the project
+## Inspiration
 
-### Inspiration
-Raids are Twitch's kindest feature, and they mostly fail at their purpose. A streamer hands their whole community to a friend, and within minutes most of those viewers are gone. The research is consistent: the first 30–60 seconds decide whether raiders stay, and the standard advice is a shout-out and a "please follow." We wanted to give raiders something to *do* in that window, and give both communities a reason to meet each other instead of passing through.
+A Twitch raid brings a whole community into another streamer’s room, but arrival alone does not create a connection. We wanted to give newcomers something easy to do immediately, alongside the people already there.
 
-We also wanted to fix what makes raids scary. A hate raid can make an auto-triggered overlay part of the attack. So RaidRumble never acts on a streamer's channel until a policy has said yes.
+We also wanted the host to stay in control. A raid is triggered by somebody else. Automatically turning that event into a stream takeover would make an unwelcome raid worse. RaidRumble combines a shared game with explicit rules about when it may act.
 
-### What it does
-When a raid lands, RaidRumble turns the host's stream into a **3-minute, three-round arena** between the incoming **Raiders** (led by the raiding streamer, the *Warlord*) and the host's **Home Guard**.
+## What it does
 
-**Round 1: Siege (60s, versus)**
-- A tug-of-war gate. Chat types the keyword on screen, which rotates every 10 seconds.
-- Each viewer counts once per 2 seconds, so spam and bots gain nothing.
-- Force is measured by **participation rate, not headcount.** A 15-person engaged community can hold off a 300-person raid that mostly lurks.
-- The Warlord fires a *Battering Ram* from their phone; the host answers with *Boiling Oil*.
-- Channel Points *Reinforcements* let viewers commit harder.
+RaidRumble turns an accepted raid into three minutes of play between **Raiders ▲** and **Home Guard ●**. Color is always paired with shape.
 
-**Round 2: Know Your Host (50s, bridging)**
-- Four rapid A/B/C questions.
-- Raiders score by answering questions about the host's stream; Home Guard scores by answering questions about the raider's stream.
-- Questions are generated from both channels' live info and a few facts each streamer entered. Every generated line passes a content policy before it reaches the screen, with templates as a fallback.
-- Two communities that met 90 seconds ago now know something about each other.
+**Siege — 60 seconds.** Chat types the rotating keyword to move a tug-of-war gate. Each viewer counts once per two-second window. Force is normalized by active team size, so a small engaged community can resist a much larger, mostly lurking raid. The raiding streamer’s phone controls one **Battering Ram**; the host has one **Boiling Oil**.
 
-**Round 3: Fusion Boss (60s, co-op)**
-- The teams merge against one boss, procedurally themed from both channels' categories (Speedrunning × Gardening gives *"The Speedrun Gardener"*).
-- Boss HP scales with the combined active crowd, so any raid size is beatable.
-- Both communities win, or lose, together. The end card crowns MVPs from both sides.
+**Know Your Host — 50 seconds.** Four A/B/C questions introduce the two streams. Raiders answer questions about the host; Home Guard answers questions about the visitors. Templates build factual questions from supplied channel information and up to three streamer-entered facts. An optional model selects those facts and writes fictional boss flavor; it cannot invent factual quiz answers. All resulting content passes policy, with authored fallbacks.
 
-**After the match**
-- **Afterglow widget:** for 5 minutes, a corner widget counts *raiders still here*. That number is RaidRumble's success metric.
-- **Rivalry ledger:** every channel pair gets a persistent record. The next time they meet, the intro reads *"REMATCH · Raiders lead 2–1"*. A rivalry map shows the web of communities that have rumbled.
+**Fusion Boss — 60 seconds.** Both teams attack one boss themed from their channel categories. They win or lose together. A ten-second end card celebrates both teams’ MVPs and invites Raiders to follow the host and Home Guard to discover the visitors.
 
-**Knowing who's on which team.** Twitch doesn't label raiders in chat, so RaidRumble resolves teams in four layers:
-1. **Bonus mode, Collab Rumble:** in a Twitch Shared Chat session, every message carries its source channel, so attribution is exact. Planned collabs can start a rumble without a raid.
-2. **Roster capture:** if the raiding streamer also uses RaidRumble, people who were chatting in their channel are recognised as Raiders the moment they arrive. The roster is held in memory only and discarded after the match.
-3. **Self-select:** `!join raiders` / `!join home`, locked after your first counted move.
-4. **Fallback heuristic:** first message after the raid timestamp, not a known regular (salted hashes), and appearing in the post-raid chatter delta.
+**Afterglow** then counts tagged raiders who chatted within the last two minutes, for five minutes after play. It is a participation signal, not a concurrent viewer count or a measured retention improvement. The persistent **rivalry ledger** records channel-pair results, rematches, boss wins and decision identifiers, with a dashboard network map.
 
-Every assignment carries a confidence score, and viewers can correct their own.
+The OBS overlay defaults to **Lower Third**, keeping the main stream visible. Hosts can select **Side Rail** or **Full Arena**, reduce motion, and opt into original sound cues. Sound is off by default. Gated contributor names acknowledge counted moves during Siege and Fusion Boss.
 
-**Policy before action (Decionis / AgentSafe).** Every action RaidRumble takes on a channel goes through one gate first: starting a match, posting in chat, showing generated text, firing a special, changing Channel Points rewards, sending a shout-out. The gate returns one of three verdicts:
-- **ALLOW:** e.g. a raider the host follows or has rumbled before.
-- **BLOCK:** e.g. a raider account days old, a blocklisted channel, or a raid flood.
-- **ESCALATE:** the host gets a 10-second **"Accept the challenge?"** prompt. Their one click becomes a *single-use* grant, so it can't be replayed.
+## Knowing who is on which team
 
-New installs run in **Shadow Mode**: the gate shows what it *would* have blocked before the host switches anything to enforce. When connected to the hosted Decionis authority, each decision produces an Ed25519-signed dossier that can be verified offline (`npx -y @decionis/verify`). The rivalry ledger references those dossier IDs, so every recorded match traces back to the decision that allowed it. Judges and anyone else can run the same policy file locally with no account.
+Twitch does not identify every raider in ordinary chat. RaidRumble uses four layers:
 
-### How we built it, with Codex at the centre
-Codex built RaidRumble in a single thread (session ID above), driven by a repo-level **`AGENTS.md`**. That file is the contract Codex read before every task. It contains:
-- the product spec;
-- the pure `RoundModule` interface every round implements;
-- the `PolicyGate` interface and a table of governed actions;
-- a test definition of done;
-- a numbered build order.
+1. **Shared Chat:** the source channel provides exact attribution when available. Planned **Collab Rumble** sessions can start without a raid.
+2. **Authorized roster:** if the raiding streamer connected beforehand, recent native chatters from that channel can be recognized. The temporary roster is held in memory and cleared after use.
+3. **Self-select:** `!join raiders` or `!join home` can correct a roster or heuristic assignment before the first counted move. Shared Chat remains authoritative.
+4. **Heuristic:** arrival time, per-host salted regular hashes and an available chatter snapshot supply fallback evidence.
 
-**What Codex did:**
-- **Architecture to code.**
-  - Codex scaffolded the pnpm monorepo: server, overlay, dashboard, and the engine, policy, twitch, content and ledger packages.
-  - It then implemented each module against the interfaces in `AGENTS.md`.
-  - Because rounds are pure, deterministic modules, adding a round was one file plus one registry line. Codex wrote Siege, Know Your Host and Fusion Boss as separate tasks, each with its own tests.
-- **Test-first on the hard parts.** Codex wrote the tests before the code for:
-  - attribution priority conflicts;
-  - participation-rate fairness (300 lurkers vs 15 active);
-  - per-user rate limiting;
-  - every policy verdict path in both shadow and enforce modes;
-  - single-use grants (a second claim is refused).
+Assignments retain their source and confidence. The approach admits uncertainty instead of presenting a heuristic as a Twitch-provided fact.
 
-  `[[N]]` tests, all green.
-- **A guardrail Codex can't forget.** Codex added a lint test that fails the build if any Twitch write call is made outside the policy executor. "Policy before action" is enforced by the test suite, not just by convention.
-- **The judge-mode simulator.** Codex built `tools/sim`. It drives the real server through mock EventSub raids (Twitch CLI) and generates synthetic chat load across four scenarios: a friendly raid, a stranger raid (ESCALATE), a hate raid (BLOCK), and a Shared Chat collab. The same simulator powers the dashboard's *Test raid* button.
-- **Build log.** After each task, Codex appended an entry to `docs/codex-log.md` (prompt, files touched, tests added). The video's build segment is drawn from that log.
+## Policy before action
 
-`[[Optional: X of Y commits / ~Z% of lines authored in the Codex thread]]`
+Match starts, content rendering, specials, chat messages, shoutouts, reward setup and **EventSub subscription creation** pass the policy gate before execution.
 
-**Stack and integrations:**
-- **Server:** Node + Fastify running an EventSub WebSocket client. It subscribes to `channel.raid`, `channel.chat.message`, `channel.shared_chat.*` and Channel Points redemptions.
-- **Twitch Helix:** account age, channel info, follows, chatters, chat messages, shout-outs, and custom rewards.
-- **Overlay:** a Vite/Canvas OBS browser source fed by 10 Hz view snapshots.
-- **Ledger:** SQLite.
-- **Content:** OpenAI API for questions and boss theming, with deterministic templates as fallback.
-- **Policy:** Decionis AgentSafe for the gate (`POLICY_GATE=decionis`), with a local evaluator of the same policy file as the default.
+**ALLOW** admits a trusted raid. **BLOCK** stops known rule violations, including an unfamiliar account younger than seven days. **ESCALATE** asks the host to decide within ten seconds. Approval is bound to that one action and claimed once. An unchecked **Trust next time** choice can add the accepted channel to the host’s list only after a successful start.
 
-*Disclosure:* Decionis is a pre-existing service built by the author. RaidRumble uses it as a third-party policy authority. All RaidRumble code was written during the submission period, and the default local policy gate needs no Decionis account.
+New live hosts begin in **Shadow Mode**, showing what would happen before enforcement is enabled. Operational failures still take the action’s safe fallback. The default local evaluator needs no Decionis account. An automated TypeScript source check guards the Twitch write boundary.
 
-### Challenges we ran into
-- **Raiders aren't labelled.** Building trustworthy team attribution from partial signals (and making it fail gracefully) was the core engineering problem. Layering by confidence and letting viewers self-correct made it workable.
-- **Raid sizes are wildly unequal.** Raw message counting turns every big raid into a stomp. Switching to participation-rate scoring with per-user rate limits made matches feel fair in both directions.
-- **Raids can be weapons.** Automating a stream reaction to an event *other people* trigger needed a real consent model. The answer was the ALLOW / BLOCK / ESCALATE gate, single-use approvals, and Shadow Mode.
-- **There is usually no second stream.** Raiders often end their stream when they raid. Rather than a split-screen that rarely exists, we made the arena live on the host's stream and gave the raiding streamer a phone controller.
-- `[[add one real build challenge here]]`
+The hosted Decionis adapter has been verified against its published API: signed dossiers, bound execution grants, single-use claims, receipts and replay refusal. In-match checks retain a 120 ms budget; setup checks have a bounded 1.5-second allowance. A separate production `Room.raid` probe became active in **1,475 ms** using real hosted authorization and a claim, with no timeout override. Its signed evaluation and execution binding passed verification. The receipt request timed out after the match started, so this probe does not prove receipt finalization. It used fictional channels without Twitch effects or a persistent ledger; the observed 25 ms margin is not a general latency guarantee. Local fallbacks remain explicitly unsigned.
 
-### Accomplishments that we're proud of
-- A raid becomes a shared moment that ends with **both communities winning together**, not a drive-by.
-- **Fairness you can test:** small, engaged communities can win against huge raids.
-- **Safety by construction:** the side-effect lint test means no code path can act on a channel without a verdict.
-- **Judges can run all of it in one command,** with no Twitch account and no Decionis account.
-- `[[First real raid result: e.g. "In our first live test raid, N of M raiders were still chatting at +5 min"]]`
+Eligible Affiliate/Partner hosts can explicitly approve a **100-point Reinforcements** reward. The current test account is not eligible, so this feature has mocked integration coverage rather than a live reward demonstration.
 
-### What we learned
-- Raids already have the hard part (an audience arriving at once). What they lacked was a structure for the first minute.
-- Designing for the *smaller* community first (fairness, consent) made the game better for everyone.
-- `AGENTS.md`, together with pure interfaces and test-first tasks, let Codex add whole features in one pass without breaking existing ones.
-- `[[one more real lesson]]`
+## How we built it with Codex
 
-### What's next for RaidRumble
-- More round modules: the interface is already one file per round.
-- Raid trains: rumbles chained across three or more channels, with the ledger tracking the whole chain.
-- An opt-in rivalry leaderboard for streamer teams and communities.
-- A Twitch Extension panel for viewers who prefer clicking to typing.
-- A shared policy pack so hosts can import a trusted-raider list from their streamer team.
+We built RaidRumble in **one Codex chat**, with `AGENTS.md` defining the product, interfaces, policy rules, coding conventions and test requirements.
 
----
+The clearest parallel-build evidence is the round implementation wave: **Siege, Know Your Host and Fusion Boss were generated by overlapping sub-agent tasks between 17:50:26 and 17:51:52 UTC on October 31, 2026**. Each implemented the same `start / onInput / tick / result` lifecycle and serializable `view`, with state owned by the caller. The registry combines them without round-specific branches in the timeline. The recorded red/green checkpoints are in `docs/parallel.json` and `docs/codex.md`.
 
-## Judging criteria map (use when tightening the write-up and video)
+Codex scaffolded the monorepo, wrote tests for attribution conflicts, fairness, spam limits and policy replay, then built the server, overlay, dashboard and simulator. The simulator drives the real application directly and can also run headlessly; Twitch CLI is not required. The enhancement checkout now passes **609 tests across 71 files**, strict TypeScript, lint, production builds and four deterministic headless scenarios. The earlier **501 tests across 52 files** remain a historical checkpoint.
 
-| Criterion (equal weight) | Our strongest evidence | Where judges see it |
-|---|---|---|
-| **Innovation / Idea** (also the tie-breaker) | Raids as a *game trigger* + a versus→bridging→co-op arc; four-layer raider attribution incl. Shared Chat; participation-rate fairness; policy-gated automation of events strangers trigger | Video 0:15–1:40; "What it does" |
-| **Potential Impact** | Targets Twitch's known raid drop-off; the Afterglow *raiders still here* metric; rivalry ledger gives repeat use; consent gate protects small streamers | Inspiration; end card + Afterglow in video; retention number |
-| **Technological implementation** (incl. Codex) | Pure deterministic engine, typed policy gate with single-use grants, side-effect lint test, simulator with 4 scenarios, `[[N]]` tests; built in one Codex thread from `AGENTS.md` | "How we built it"; video 1:40–2:30; repo; Codex session ID |
-| **Design** (easy to use, fun to watch) | 2-minute setup (connect + one OBS URL); *what to type / who's winning / time left* readable in 1s; colour + shape teams; MVP pops; Test raid button | Video gameplay; screenshots |
+User-recorded Codex-app clips show the shared `RoundModule` contract and a panel with **three working subagents** during the enhancement work. These are genuine app captures, separate from the timestamped evidence of the earlier round-generation wave. The clips do not show a readable test-total report; the 609-test claim comes from the recorded verification run.
 
----
+Live verification also produced a concrete engineering lesson: healthy Twitch keepalives can arrive just after their advertised interval. We added a bounded two-second grace period and regressions for healthy jitter, genuine silence and failed migrations, instead of disabling recovery.
 
-## Testing instructions (paste into the "testing instructions" field)
+_Disclosure:_ Decionis predates RaidRumble and is a service built by the author. RaidRumble integrates it as an optional policy authority; the local implementation remains fully usable without that service.
 
-```
-Fastest path: no Twitch or Decionis account needed
-1. Node 20+, pnpm 9+.  git clone <repo> && cd RaidRumble && pnpm i
-2. pnpm dev        → open http://localhost:5173/overlay/demo (the overlay) and http://localhost:5174 (dashboard)
-3. pnpm sim        → simulated 120-viewer raid, 300 synthetic raiders vs 20 home chatters; watch all three rounds
-4. pnpm sim -- --scenario stranger-raid   → dashboard shows "Accept the challenge?" (ESCALATE). Click to start.
-5. pnpm sim -- --scenario hate-raid       → BLOCK; nothing appears on the overlay; see reason codes in dashboard
-6. pnpm sim -- --scenario collab          → Shared Chat attribution (exact team tags)
-7. pnpm test       → full test suite
+## What is verified
 
-Live on Twitch
-1. Create a Twitch app (dev.twitch.tv/console), set redirect URL to <PUBLIC_BASE_URL>/auth/callback
-2. Copy .env.example → .env, fill TWITCH_* (and optionally OPENAI_*; templates are used without it)
-3. pnpm dev, open the dashboard, Connect Twitch (host), Connect bot account
-4. Add the overlay URL as an OBS Browser Source (1920x1080)
-5. Have a friend raid you, or press "Test raid" in the dashboard
+Confirmed checks include host OAuth, separate bot OAuth for the deliberately selected same-account test, five enabled EventSub subscriptions and incoming chat delivery. The public **babafesti** broadcast used an original, labeled backdrop and the real Lower Third OBS browser source. One account's messages entered through Twitch's chat UI drove two **Test Raid · Real Chat** sessions. The first ended in a loss; the second visibly defeated the Fusion Boss. The public Twitch player also showed an Afterglow sample of **1**.
 
-Optional: Decionis hosted policy
-Set POLICY_GATE=decionis and DECIONIS_* vars; verify a dossier with: npx -y @decionis/verify <dossier.json>
-```
+Those sessions demonstrate the product running on Twitch with genuine chat transport. They used a fictional opposing team, no synthetic players, no automatic Twitch writes and no real rivalry-ledger records. The broadcast used the local policy gate. It does not demonstrate a real incoming raid, a second streamer, cross-channel Shared Chat, bot announcements/shoutouts, Channel Points, a full five-minute retention measurement or retention lift.
 
----
+Automated coverage exercises those integration paths, including Warlord identity, reward configuration, Shared Chat, persistence and Afterglow. Hosted authority was checked separately on isolated fictional matches. The earlier diagnostic lifecycle finalized a receipt and refused replay; the newer production-budget start verified the signed evaluation and binding while its receipt remained unconfirmed after timeout.
 
-## Demo video script (≤ 2:55, public on YouTube; CC0 audio only, no third-party logos)
+## What we learned and what is next
 
-| Time | Shot | Voice-over |
-|---|---|---|
-| 0:00–0:12 | Viewer count graph dropping after a raid | "Raids hand a whole community to another streamer, and most of them leave within minutes. The first minute decides it." |
-| 0:12–0:22 | Raid lands; dashboard flashes *ESCALATE · Accept the challenge?*; host clicks | "RaidRumble turns that minute into a game. But only for raids the host wants: every action passes a policy gate first." |
-| 0:22–0:55 | **Siege** on a real stream; friends in both chats; keyword rotates; Battering Ram from phone | "Round one, Siege. Type the keyword. Scored by participation rate, so a small, loud community can hold off a giant raid." |
-| 0:55–1:15 | **Know Your Host** questions; reveal | "Round two: raiders answer questions about the host, the host's chat about the raider. Two communities, introduced." |
-| 1:15–1:38 | **Fusion Boss** "The Speedrun Gardener"; both meters merge; MVPs; end card "REMATCH 2–1" | "Round three, both chats versus one boss built from both streams. Everyone wins together, and the rivalry is saved." |
-| 1:38–1:48 | Afterglow widget "Raiders still here: `[[N]]`" | "And this number is the point: raiders still here five minutes later." |
-| 1:48–2:30 | **Codex**: `AGENTS.md` scroll → Codex thread adding a round module → tests going green → side-effect lint test → `pnpm sim -- --scenario hate-raid` showing BLOCK | "Built entirely in one Codex thread. AGENTS.md is the contract: pure round modules, a typed policy gate, tests first. Codex even wrote the test that stops any Twitch write outside the policy executor." |
-| 2:30–2:48 | Rivalry map; Collab Rumble via Shared Chat; Shadow Mode report | "Collab mode for Shared Chat, a rivalry map, and Shadow Mode so hosts see what would be blocked before enforcing anything." |
-| 2:48–2:55 | Title card + repo | "RaidRumble. Make every raid count." |
+Designing for the smaller community improved both fairness and consent. Keeping rounds pure made parallel development practical. Separating recorded evidence from implementation coverage kept the submission honest.
 
-**Filming notes**
-- Use real accounts with friends chatting for the on-Twitch footage.
-- Use the simulator only for clearly labelled local shots.
-- Record the Codex segment from the actual build thread.
+Next steps are repeated streamer sessions to measure participation, more plug-in rounds, and an opt-in rivalry leaderboard. Raid trains and an Extension are future possibilities, not features in this submission. No hosted deployment is claimed.
 
----
+## Testing instructions
 
-## Pre-submit checklist
-- [ ] Every feature in "What it does" works in the build (delete lines that didn't ship)
-- [ ] Video < 3:00, public on YouTube, shows it on Twitch **and** shows the Codex build
-- [ ] Codex session ID pasted (the single build thread)
-- [ ] Repo has README, `.env.example`, `AGENTS.md`, `docs/codex-log.md`, `policy/raidrumble.policy.yaml`; private repo shared with testing@devpost.com
-- [ ] `pnpm i && pnpm sim` works on a clean clone
-- [ ] All `[[placeholders]]` replaced or removed
-- [ ] No secrets in repo; CC0/original assets only; no third-party trademarks in video beyond Twitch itself
-- [ ] Note in description: *Decionis is a pre-existing service by the author used as a third-party policy authority; all RaidRumble code was written during the submission period; the local policy gate needs no Decionis account.*
+1. Use Node ≥20.19 and the repository’s pinned pnpm. Clone <https://github.com/ocularminds/raidrumble>, enter the folder and run `pnpm i`.
+2. Run `pnpm dev`. Open <http://localhost:5174>, then **Launch Test Raid**. **Open Arena** shows the overlay preview.
+3. Try **A new challenger** for ESCALATE and explicit acceptance; **Unwelcome raid** for an unknown new account being blocked; and **Collab Rumble** for simulated exact team attribution.
+4. During Siege, open <http://localhost:5174/warlord/demo> and use Battering Ram once. The host dashboard provides Boiling Oil.
+5. Run `pnpm sim -- --headless --json` without a server for a fast deterministic match, and `pnpm test` for the current automated suite.
+6. For actual Twitch setup, follow `apps/server/src/live/README.md`. For hosted authority setup and signed-artifact verification, follow `docs/authority.md`.
+
+## Publication status
+
+The public repository, Codex session ID and current 609-test verification total are ready. Genuine Twitch and Codex-app source clips have been captured and reviewed. The final under-three-minute edit, accessible video URL, default-branch update and Devpost submission are still pending. The older 114-second local cut and its source/log segment remain historical evidence, with their original labels and test counts.

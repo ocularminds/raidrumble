@@ -11,6 +11,7 @@ params:
   escalateTimeoutMs: 10000
 actions:
   rumble.start:
+    latencyBudgetMs: 1500
     block:
       - { when: 'raider in lists.block', reason: RAIDER_BLOCKLISTED }
       - {
@@ -34,6 +35,7 @@ actions:
       }
     onFailure: ESCALATE
   rumble.start.collab:
+    latencyBudgetMs: 1500
     onFailure: ESCALATE
   content.render:
     onFailure: TEMPLATE
@@ -42,10 +44,12 @@ actions:
   special.fire:
     onFailure: BLOCK
   rewards.configure:
+    latencyBudgetMs: 1500
     onFailure: BLOCK
   shoutout.send:
     onFailure: SKIP
   ledger.settle:
     onFailure: LOCAL
   events.subscribe:
+    latencyBudgetMs: 1500
     onFailure: BLOCK

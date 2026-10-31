@@ -48,7 +48,7 @@ export class Scenes {
     ctx.fillRect(273 + 1374 * (1 - position), 723, 1374 * position, 34);
     ctx.restore();
     p.line(960, 703, 960, 777, palette.white, 4);
-    p.text('PARTICIPATION WINS. EVERY VIEWER COUNTS ONCE.', 960, 821, 30, palette.muted, 'center');
+    p.text('ONE MOVE EVERY 2 SECONDS. EVERYONE COUNTS.', 960, 821, 30, palette.muted, 'center');
   }
 
   quiz(round: RoundView): void {
@@ -83,7 +83,7 @@ export class Scenes {
     });
     if (quiz.answer)
       p.text(
-        `ANSWER ${quiz.answer}  ·  ${p.fit(quiz.explanation ?? 'Now you know your neighbours.', 1400, 32)}`,
+        `ANSWER ${quiz.answer}  ·  ${p.fit(quiz.explanation ?? 'Now you know your neighbors.', 1400, 32)}`,
         960,
         884,
         32,
@@ -111,7 +111,7 @@ export class Scenes {
     const bob = Math.sin(motion) * 7;
     p.text(p.fit(boss.name.toUpperCase(), 1380, 44), 960, 342, 44, color, 'center', 800);
     ctx.save();
-    ctx.translate(960, 528 + bob);
+    ctx.translate(960, 558 + bob);
     ctx.shadowColor = color;
     ctx.shadowBlur = 34;
     ctx.beginPath();
@@ -148,7 +148,14 @@ export class Scenes {
     p.panel(320, 720, 1280, 38, 19, '#2c2938', '#564e68');
     const health = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
     if (health > 0) p.panel(323, 723, Math.max(1, 1274 * health), 32, 16, color, color);
-    p.text(`${Math.ceil(boss.hp)} / ${boss.maxHp} HP`, 960, 800, 32, color, 'center');
+    p.text(
+      defeated ? 'BOSS DEFEATED' : `${Math.ceil(boss.hp)} / ${boss.maxHp} HP`,
+      960,
+      800,
+      32,
+      color,
+      'center',
+    );
     p.text(
       defeated
         ? 'VICTORY FOR BOTH COMMUNITIES · MEET YOUR MVPs AT THE END'

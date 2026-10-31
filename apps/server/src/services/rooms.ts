@@ -3,7 +3,7 @@ import { demoChannels, type ChannelProfile, type ContentGenerator } from '@raidr
 import { randomUUID } from 'node:crypto';
 import { Ledger, RegularStore } from '@raidrumble/ledger';
 import type { Scenario } from '../model.js';
-import { Room, type CompletedMatch, type RaidRequest } from './room.js';
+import { Room, type CompletedMatch, type RaidRequest, type RoomChat } from './room.js';
 import { SettingsStore } from './settings.js';
 import { HostHistory } from './history.js';
 
@@ -27,6 +27,9 @@ export class Rooms {
   readonly rewardIds = new Map<string, string>();
   private readonly raidHistory = new Map<string, number[]>();
   private readonly regulars: RegularStore;
+  private readonly practices = new Map<string, Room>();
+  private readonly readyPractices = new Set<string>();
+  private readonly incomingRaids = new Map<string, number>();
   /** Until Twitch supplies a stream id, a server session is the explicit history boundary. */
   private readonly session = `server:${randomUUID()}`;
   private strangerSequence = 0;
@@ -42,9 +45,26 @@ export class Rooms {
   }
 
   get(hostId: string): Room {
+    return this.practices.get(hostId) ?? this.primary(hostId);
+  }
+
+  /** Settings, hosted authority, and Twitch writes always use the retained primary room. */
+  primary(hostId: string): Room {
     const room = this.all.get(hostId);
     if (!room) throw new Error('Channel not connected.');
     return room;
+  }
+
+  /** Selected overlay rooms; all remains the primary-only registry for side-effect services. */
+  active(): readonly Room[] {
+    return [...this.all.keys()].map((hostId) => this.get(hostId));
+  }
+
+  async chat(hostId: string, message: RoomChat): Promise<boolean> {
+    const primary = this.primary(hostId);
+    const selected = this.get(hostId);
+    const counted = await primary.chat(message);
+    return selected === primary ? counted : selected.chat(message);
   }
 
   addHost(profile: ChannelProfile): void {
@@ -67,26 +87,111 @@ export class Rooms {
     if (saved) room.configure(saved);
     this.all.set(profile.id, room);
     room.beginStream(this.session);
+    void room.nameHost(profile.name);
   }
 
   beginStream(hostId: string, streamId = this.session): void {
-    this.get(hostId).beginStream(streamId);
+    this.primary(hostId).beginStream(streamId);
   }
 
   async flush(): Promise<void> {
-    await Promise.all([...this.all.values()].map((room) => room.flush()));
+    await Promise.all(
+      [...this.all.values(), ...this.practices.values()].map((room) => room.flush()),
+    );
   }
 
   close(): Promise<void> {
     if (this.closing) return this.closing;
     this.closing = (async () => {
       try {
-        await Promise.all([...this.all.values()].map((room) => room.close()));
+        await Promise.all(
+          [...this.all.values(), ...this.practices.values()].map((room) => room.close()),
+        );
       } finally {
+        this.practices.clear();
+        this.readyPractices.clear();
         this.regulars.close();
       }
     })();
     return this.closing;
+  }
+
+  /** Local, ephemeral overlay test. The fictional team never becomes a live channel or ledger edge. */
+  async practice(hostId: string): Promise<Room> {
+    if (hostId === 'demo') throw new Error('Choose a connected Twitch host for real chat.');
+    if (this.closing) throw new Error('The server has closed.');
+    const primary = this.primary(hostId);
+    const view = primary.view();
+    if (
+      this.practices.has(hostId) ||
+      this.incomingRaids.has(hostId) ||
+      view.status === 'incoming' ||
+      view.pending ||
+      (view.match && view.match.status !== 'finished')
+    )
+      throw new Error('A match is already active.');
+    const profile = this.profiles.get(hostId);
+    if (!profile) throw new Error('Channel not connected.');
+    const config = structuredClone(primary.gate.getConfig());
+    const raiderId = `practice${hostId}`;
+    const room = new Room({
+      hostId,
+      config,
+      gateKind: 'local',
+      quiet: this.options.quiet,
+      now: this.options.now,
+    });
+    room.configure({
+      ...primary.settings(),
+      mode: 'enforce',
+      allow: [...primary.settings().allow, raiderId],
+    });
+    room.beginStream(`practice:${this.session}`);
+    this.practices.set(hostId, room);
+    void room.nameHost(profile.name);
+    try {
+      await room.raid({
+        channels: {
+          host: profile,
+          raider: {
+            id: raiderId,
+            name: 'Practice Raiders',
+            category: 'Community Game',
+            title: 'Test Raid with Real Chat',
+            tags: [],
+            facts: [
+              'This is a fictional practice team for viewers in this chat.',
+              'Choose a team before your first counted move.',
+            ],
+          },
+        },
+        raiderLogin: raiderId,
+        accountAgeDays: Math.max(7, config.params.minRaiderAccountAgeDays),
+        hostFollowsRaider: false,
+        viewers: Math.max(5, config.params.minRaidSize),
+        homeMembers: 5,
+        simulated: true,
+        practice: 'realchat',
+      });
+      if (this.practices.get(hostId) !== room || this.closing)
+        throw new Error('This practice was cancelled.');
+      this.readyPractices.add(hostId);
+      return room;
+    } catch (error) {
+      if (this.practices.get(hostId) === room) {
+        this.practices.delete(hostId);
+        this.readyPractices.delete(hostId);
+      }
+      await room.close();
+      throw error;
+    }
+  }
+
+  async endPractice(hostId: string): Promise<void> {
+    const room = this.practices.get(hostId);
+    this.practices.delete(hostId);
+    this.readyPractices.delete(hostId);
+    await room?.close();
   }
 
   async demo(scenario: Scenario, speed = 1): Promise<Room> {
@@ -96,17 +201,13 @@ export class Rooms {
     if (scenario === 'stranger-raid')
       channels.raider = { ...channels.raider, id: this.newStranger(), name: 'NewChallenger' };
     if (scenario === 'hate-raid')
-      channels.raider = { ...channels.raider, id: 'storm', name: 'UnwelcomeRaid' };
+      channels.raider = { ...channels.raider, id: this.newStranger(), name: 'NewAccount' };
     const raiderLogin =
-      scenario === 'normal' || scenario === 'collab'
-        ? 'pixelpilot'
-        : scenario === 'stranger-raid'
-          ? channels.raider.id
-          : 'storm';
+      scenario === 'normal' || scenario === 'collab' ? 'pixelpilot' : channels.raider.id;
     await this.raid('demo', {
       channels,
       raiderLogin,
-      accountAgeDays: 300,
+      accountAgeDays: scenario === 'hate-raid' ? 2 : 300,
       hostFollowsRaider: false,
       viewers: 300,
       homeMembers: 20,
@@ -138,7 +239,19 @@ export class Rooms {
   }
 
   async raid(hostId: string, request: RaidRequest): Promise<void> {
-    const room = this.get(hostId);
+    this.incomingRaids.set(hostId, (this.incomingRaids.get(hostId) ?? 0) + 1);
+    try {
+      await this.endPractice(hostId);
+      await this.startRaid(hostId, request);
+    } finally {
+      const remaining = (this.incomingRaids.get(hostId) ?? 1) - 1;
+      if (remaining > 0) this.incomingRaids.set(hostId, remaining);
+      else this.incomingRaids.delete(hostId);
+    }
+  }
+
+  private async startRaid(hostId: string, request: RaidRequest): Promise<void> {
+    const room = this.primary(hostId);
     const pair = this.options.ledger.pair(hostId, request.channels.raider.id);
     const now = (this.options.now ?? Date.now)();
     const key = `${hostId}:${request.channels.raider.id}`;
@@ -166,19 +279,26 @@ export class Rooms {
   }
 
   save(hostId: string): void {
-    this.options.settings.set(hostId, this.get(hostId).settings());
+    const settings = this.primary(hostId).settings();
+    this.options.settings.set(hostId, settings);
+    this.practices.get(hostId)?.configure(settings);
   }
   graph() {
     return this.options.ledger.graph();
   }
 
   step(dtMs: number): void {
-    for (const room of this.all.values()) {
+    for (const room of [...this.all.values(), ...this.practices.values()]) {
       try {
         room.step(dtMs * room.speed);
       } catch {
         /* A failed room never stops other streams. */
       }
+    }
+    for (const [hostId, room] of this.practices) {
+      const view = room.view();
+      if (this.readyPractices.has(hostId) && view.status === 'idle' && !view.match)
+        void this.endPractice(hostId);
     }
   }
 

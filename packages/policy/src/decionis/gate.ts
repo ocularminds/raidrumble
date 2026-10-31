@@ -24,6 +24,7 @@ import type {
 } from './models.js';
 import { uuid } from './shape.js';
 import { DecionisTransport } from './transport.js';
+import { AuthorizationWindow, approvalTimeout } from '../budget.js';
 
 export type { DecionisOptions } from './models.js';
 
@@ -60,14 +61,15 @@ export class DecionisGate implements ConfigurablePolicyGate {
   async authorize(request: ActionRequest): Promise<Decision> {
     const req = structuredClone(request);
     const config = this.getConfig();
-    const deadline = this.now() + Math.min(10_000, config.params.escalateTimeoutMs);
+    const deadline = this.now() + approvalTimeout(config, req.action);
+    const allowance = new AuthorizationWindow(config, req.action, this.now(), deadline);
     try {
       const local = this.evaluate(req, config);
       if (local.verdict !== 'ALLOW') return this.local(req, local, config, deadline);
     } catch {
       return this.failure(req, config, deadline, 'POLICY_ERROR');
     }
-    return this.hosted(req, config, deadline);
+    return this.hosted(req, config, deadline, allowance);
   }
 
   async approve(decisionId: string, approverTwitchId: string): Promise<Decision> {
@@ -101,7 +103,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
   }
 
   finalizeGrant(id: string, outcome: GrantOutcome): Promise<boolean> {
-    return this.grants.finalize(id, outcome, this.config.defaults.latencyBudgetMs);
+    return this.grants.finalize(id, outcome, Math.min(120, this.config.defaults.latencyBudgetMs));
   }
 
   getDecision(id: string): Decision | undefined {
@@ -135,16 +137,18 @@ export class DecionisGate implements ConfigurablePolicyGate {
     req: ActionRequest,
     config: PolicyConfig,
     deadline: number,
+    allowance: AuthorizationWindow,
   ): Promise<Decision> {
     const mode = config.actions[req.action].mode ?? config.defaults.mode;
     try {
-      if (deadline <= this.now()) throw new Error('POLICY_TIMEOUT');
+      const remaining = allowance.remaining(this.now());
+      if (deadline <= this.now() || remaining <= 0) throw new Error('POLICY_TIMEOUT');
       if (mode === 'shadow' && this.options.shadowRoute === 'protocol') {
         const id = this.id();
         const result = await this.transport.request(
           '/v1/protocol/evaluate-decision',
           mode,
-          config.defaults.latencyBudgetMs,
+          remaining,
           {
             org_id: uuid(this.options.orgId),
             decision_type: req.action,
@@ -166,7 +170,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
       const result = await this.transport.request(
         '/v1/authority/grants',
         mode,
-        config.defaults.latencyBudgetMs,
+        remaining,
         {
           ...captured.binding,
           intent_hash: captured.hash,
@@ -176,7 +180,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
         captured.binding.intent_id,
       );
       const mapped = DecionisMapping.authority(result, { captured, mode, nowMs: this.now() });
-      return this.accept(req, mapped, deadline, captured);
+      return this.accept(req, mapped, deadline, captured, allowance);
     } catch (error) {
       return this.failure(
         req,
@@ -196,6 +200,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
   ): Promise<Decision> {
     const config = this.getConfig();
     config.actions[req.action].mode = decision.mode;
+    const allowance = new AuthorizationWindow(config, req.action, this.now(), pending.deadline);
     const local = this.evaluate(req, config);
     if (local.verdict === 'BLOCK') {
       this.book.begin(decision);
@@ -205,13 +210,13 @@ export class DecionisGate implements ConfigurablePolicyGate {
     if (!pending.remote) {
       this.book.begin(decision);
       this.pending.delete(decision.decisionId);
-      return this.hosted(req, config, pending.deadline);
+      return this.hosted(req, config, pending.deadline, allowance);
     }
     if (!pending.captured || !pending.escalation) throw new Error('Hosted approval unavailable');
     const body = await this.transport.request(
       `/v1/authority/escalations/${encodeURIComponent(pending.escalation.id)}`,
       'enforce',
-      config.defaults.latencyBudgetMs,
+      allowance.remaining(this.now()),
     );
     if (pending.deadline <= this.now()) throw new Error('Approval expired');
     const result = DecionisMapping.status(body, pending.escalation, {
@@ -222,7 +227,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
     if (!result) return decision;
     this.book.begin(decision);
     this.pending.delete(decision.decisionId);
-    return this.accept(req, result, pending.deadline, pending.captured);
+    return this.accept(req, result, pending.deadline, pending.captured, allowance);
   }
 
   private accept(
@@ -230,8 +235,9 @@ export class DecionisGate implements ConfigurablePolicyGate {
     result: HostedDecision,
     deadline: number,
     captured: CapturedIntent,
+    allowance: AuthorizationWindow,
   ): Decision {
-    if (result.grant) this.grants.add(result.grant);
+    if (result.grant) this.grants.add(result.grant, allowance);
     const decision = this.issue(req, result.decision, deadline);
     if (decision.verdict === 'ESCALATE')
       this.pending.set(decision.decisionId, {

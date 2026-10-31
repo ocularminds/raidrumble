@@ -104,7 +104,7 @@ export async function createApp(options: AppOptions = {}) {
       });
     },
     onChat: async (hostId, event) => {
-      await rooms.get(hostId).chat({
+      await rooms.chat(hostId, {
         userId: event.userId,
         text: event.text,
         displayName: event.displayName,
@@ -118,7 +118,7 @@ export async function createApp(options: AppOptions = {}) {
     onRedemption: async (hostId, event) => {
       const rewardId = rooms.rewardIds.get(hostId);
       if (rewardId)
-        await rooms.get(hostId).reinforce(
+        await rooms.primary(hostId).reinforce(
           {
             userId: event.userId,
             rewardId: event.rewardId,
@@ -155,12 +155,13 @@ export async function createApp(options: AppOptions = {}) {
   await app.register(websocket);
   const clients = new Map<WebSocket, () => unknown>();
   app.get<{ Params: { hostId: string } }>('/ws/:hostId', { websocket: true }, (socket, request) => {
-    const room = rooms.all.get(request.params.hostId);
-    if (!room) {
+    const hostId = request.params.hostId;
+    if (!rooms.all.has(hostId)) {
       socket.close(1008, 'Unknown channel');
       return;
     }
-    const read = () => room.view();
+    // Re-resolve so an existing OBS connection follows entry/exit from isolated practice.
+    const read = () => rooms.get(hostId).view();
     clients.set(socket, read);
     socket.send(JSON.stringify(read()));
     socket.on('close', () => clients.delete(socket));
@@ -170,7 +171,7 @@ export async function createApp(options: AppOptions = {}) {
     '/ws/mirror/:matchId',
     { websocket: true },
     (socket, request) => {
-      const room = [...rooms.all.values()].find((room) => room.matchId === request.params.matchId);
+      const room = rooms.active().find((room) => room.matchId === request.params.matchId);
       if (!room) {
         socket.close(1008, 'Unknown match');
         return;

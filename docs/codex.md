@@ -2,6 +2,8 @@
 
 All implementation belongs to this Codex build chat. Sub-agents are parallel subtasks of this chat, as requested by the user. They are not separate submission chats.
 
+The current enhancement checkpoint passes **609 tests across 71 files**. Earlier entries preserve historical implementation states and test totals, including 361 and 501; an “unfinished” or “unverified” statement in those entries describes that checkpoint. Current evidence and limits are in [verify.md](verify.md).
+
 ## 2026-10-31 · Contract and parallel kickoff
 
 - Prompt: Start T1, run other tasks in parallel, build rounds as plug-in modules, show parallel generation in the demo, and use short paths with single-responsibility classes and a 500-line limit.
@@ -18,7 +20,7 @@ Build chat ID: `01a1930a-c3f4-7b53-b90a-a523ae252545` (read from the current Cod
 - Prompt: Start T1 while independent foundation tasks run in parallel.
 - Files: root package/tool configuration, `.env.example`, workspace package manifests, `tools/checks/src/files.test.ts` and `.gitignore`.
 - Result: pnpm 10.20.0 workspaces, strict TypeScript, Fastify/Vite, Vitest, ESLint and Prettier. `pnpm dev` starts all three app surfaces; tests need no CI or accounts.
-- Tests: source paths and 500-line cap, including the later Python video tools. Final suite: 361 passing tests in 41 files.
+- Tests: source paths and 500-line cap, including the later Python video tools. Final suite at that checkpoint: 361 passing tests in 41 files.
 - Surprise: unpinned Corepack attempted an incompatible pnpm version; an explicit package-manager pin fixed the development entry point.
 
 ## 2026-10-31 · T2 · Local policy and the write boundary
@@ -107,12 +109,12 @@ Build chat ID: `01a1930a-c3f4-7b53-b90a-a523ae252545` (read from the current Cod
 - Tests: 22 ledger tests plus lifecycle integration, reopening databases, reversed channel orientation, timeout fallback, retention across rematches, async reset and shutdown flush.
 - Audit correction: persistence failures are surfaced and failed settlement suppresses retention instead of silently claiming success. Live home size comes from recent observed chatters with a floor of five.
 
-## 2026-10-31 · T12 · Hosted adapter boundary, unfinished
+## 2026-10-31 · T12 · Historical hosted adapter boundary
 
 - Prompt: Keep hosted authority behind the interface and never guess the decision-evaluation wire format.
 - Files: `packages/policy/src/decionis/{gate,mapping}.ts`, policy failure tests and ledger receipt fields.
 - Result: selection by `POLICY_GATE=decionis`, one isolated `TODO(decionis-wire)`, explicit onFailure behavior and storage support for real future dossier IDs.
-- Status: hosted evaluation/approval/grant mapping and signed dossiers remain unimplemented until the API mapping is confirmed. T12 is intentionally unchecked. Local unsigned decisions are accurately labelled throughout the app and video.
+- Status at this checkpoint: hosted evaluation/approval/grant mapping and signed dossiers were unimplemented pending API confirmation. T12 was intentionally unchecked. The later T12 entry records completion; this historical entry preserves the original boundary work.
 
 ## 2026-10-31 · T13 · Specials and Channel Points
 
@@ -145,7 +147,7 @@ Build chat ID: `01a1930a-c3f4-7b53-b90a-a523ae252545` (read from the current Cod
 - Verification: the recorded integration checkpoint passes **359 tests in 41 files**; all four headless scenarios pass. Desktop overlay and phone control were visually inspected. The refreshed video passes duration, size, 1920×1080, 30 fps, H.264 and AAC checks: **114.23 seconds / 3.23 MB**. Actual final frames were reviewed in the contact sheet; export validation is saved in `artifacts/verification.json`.
 - Final readability pass: long quiz options wrap across larger cards, and a defeated boss switches to a green GG celebration while preserving the three-minute timeline.
 
-## 2026-10-31 · Final replay regression and verification
+## 2026-10-31 · Historical local replay regression and verification
 
 - Prompt: A repeated stranger demo should still show ESCALATE, while friendly rematches retain ledger trust.
 - Owner: `/root/engine` handled this regression in parallel with the parent's final video/format verification.
@@ -183,3 +185,50 @@ Build chat ID: `01a1930a-c3f4-7b53-b90a-a523ae252545` (read from the current Cod
 - Files: `packages/twitch/src/eventsub.ts`, `packages/twitch/test/socket.test.ts`, `docs/verify.md`, this log and AGENTS. Sanitized status snapshots and browser screenshots remain in ignored `artifacts/`.
 - Validation: **501 tests / 52 files passed**, with lint and strict typecheck passing after the fix. Formatting and production builds passed. The four previously verified judge scenarios are unchanged. Actual incoming raids, cross-channel Shared Chat, bot API announcements/shoutouts and Affiliate/Partner rewards remain separate live-stream checks.
 - Delivery: hosted/Twitch integration is committed as `d5ad6c4` in [PR #2](https://github.com/ocularminds/raidrumble/pull/2), with this tested keepalive fix and completed verification record added to the same PR. The earlier build/demo checkpoint remains on merged PR #1.
+
+## 2026-10-31 · T17–T28 · Enhancement implementation wave
+
+- Prompt: Execute all improvements in `improvement.md`, retaining the single build chat and parallel agents.
+- Starting point: PR #2 was merged before the enhancement work began on `codex/stream`. The 501-test integration checkpoint remains historical.
+- Parallel ownership: parent handled overlay/layout/sound and final integration; `/root/engine` handled contributor feedback, deterministic demos, factual content and isolated practice orchestration; `/root/twitch` handled dashboard onboarding/copy, shared names, bot messages and Warlord feedback; `/root/policy` handled setup budgets, incoming state, trust, preferences and practice routes.
+
+| Task      | Result and principal files                                                                                                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T17 / E1  | Lower Third default, Side Rail and Full Arena; saved layout preference. Overlay `compact.ts`, `arena.ts`, `draw.ts`, layout tests, dashboard controls and server settings.                                  |
+| T18 / E2  | Follow invitations on both end-card outcomes and in bounded closing chat. Overlay `scenes.ts`/`compact.ts`, server `services/stream.ts` and message tests.                                                  |
+| T19 / E3  | Gated counted-input pops and top-three streaks in Siege/Boss. Engine `feedback.ts`, Game integration, overlay `feedback.ts` and boundary/expiry tests.                                                      |
+| T20 / E4  | Normal local simulation ends Siege with a close Raider comeback in the last ten seconds; collab stays home-favored. Server `services/demo.ts`, Game and simulation tests.                                   |
+| T21 / E5  | Captured setup/claim budgets, incoming state and hosted-start evidence. Policy `budget.ts`, gate/grant/transport changes, `services/room.ts`, `content.ts`, arena models and budget/incoming/staging tests. |
+| T22 / E6  | Unknown two-day-old account triggers `RAIDER_ACCOUNT_TOO_NEW`, independent of a prefilled blocklist. Demo service and application tests.                                                                    |
+| T23 / E7  | Plausible category distractors without invented facts or placeholder choices. Content `categories.ts`, `templates.ts` and content/template tests.                                                           |
+| T24 / E8  | General category-based boss names replace the demo-only special case. Content `boss.ts`, category mapping and deterministic template tests.                                                                 |
+| T25 / E9  | Original CC0 sound cues, off by default, with saved control and cue deduplication. Overlay `sound.ts`/`cues.ts`, dashboard controls, server settings and `docs/media/sound.md`.                             |
+| T26 / E10 | Unchecked trust-next-time choice bound to the exact successful approval. Dashboard `approval.ts`, server `preferences.ts`, Room/host routes, approval and persistence tests.                                |
+| T27 / E11 | First-run setup, gated Shared Chat names, plain-language policy activity and compact empty states. Dashboard `setup.ts`/`activity.ts`, live `shared.ts`, host status and presentation tests.                |
+| T28 / E12 | Consistent US copy, feature names, external-link arrows, bot onboarding and used-state Warlord feedback. Dashboard `copy.ts`/`warlord.ts`, overlay scenes, stream messages and focused UI tests.            |
+
+- Contract changes were recorded first: four setup actions have at most 1,500 ms, in-match actions retain 120 ms, immediate claims consume the captured remainder, and later valid human approvals get a fresh bounded allowance without extending the original host deadline. Receipt handling is bounded separately.
+- Tests first covered policy deadlines, explicit trust, settings migration, incoming presentation, attribution-safe contributor feedback, deterministic comeback/content and practice isolation. Slow or stale callbacks cannot start a replacement match, persist trust or route real rewards through a local practice authority.
+- Audit finding: preparing content inside the claimed effect could outlive a short execution lease. Four regression tests reproduced the problem and then passed after staging preparation before approval/claim and making Game creation synchronous. Initial hosted ALLOW uses ready content or the authored safe pack immediately; later generated content never replaces the running match. Receipt delays neither hide an executed match nor cause it to run again.
+- Final automated checkpoint: **609 tests / 71 files passed**, zero failures; ESLint, strict TypeScript and both production builds passed. All four headless scenarios passed without degradation. Normal/stranger finish Raiders/Home/both, collab finishes Home/Home/both, and the unfamiliar new-account raid is blocked without a match. Simulated Afterglow is eight and is not a live retention claim.
+- Evidence: `artifacts/finalchecks/20261031T223154617/summary.json`, recorded at 22:33:57 UTC. Its initial format check listed only three pending documentation files; the subsequent documentation pass formats those without altering the recorded report.
+
+## 2026-10-31 · T21 · Hosted start within the production allowance
+
+- Prompt: Verify the actual hosted start path after the budget and execution-lease corrections, using an isolated fictional match and no Twitch effects.
+- Result: production `Room.raid` changed from incoming to active at **1,475 ms** with the configured **1,500 ms** setup allowance and no diagnostic timeout override. Authorization took 734 ms and the immediate claim 717 ms. The optional content checks retained 120 ms and used authored fallbacks.
+- Evidence: decision `f09ea72f-aa7a-445d-8ba4-088c9231d99b`, dossier `ae940576-ae47-419a-a7a6-424a5bdb793f`; three Ed25519 artifacts, including the execution binding, passed the official verifier. Sanitized evidence is in `docs/hosted.json` and explained in `docs/authority.md`.
+- Limit: the separately bounded receipt request timed out. The match remained active, but this probe does not prove receipt finalization or an observed Twitch effect. The 25 ms margin is one measured result, not a latency guarantee. The earlier isolated lifecycle probe separately confirmed a finalized receipt and replay refusal.
+
+## 2026-10-31 · T29/T30 progress · Public Twitch practice and genuine Codex footage
+
+- Prompt: Refresh the submission evidence using the functioning Twitch overlay and user-recorded Codex work, with accurate labels and no invented results.
+- Practice integration: a separate ephemeral local Room receives real host chat, generates no automatic players, sends no Twitch API messages/shoutouts and writes no real rivalry result. Real raids supersede practice and still use the primary host gate; reward setup and redemptions remain on the primary authority. Engine, policy and Twitch agents covered selection, cancellation, history, expiry and reward routing in integration tests.
+- Public Twitch result: the user-authorized babafesti broadcast used the real Lower Third OBS browser source over an original labeled backdrop. One account's messages entered through Twitch's chat UI drove two Test Raid Real Chat sessions. The first lost; the second showed GG/BOSS DEFEATED at 22:48:22 UTC and its victory end card at 22:48:29 UTC. Public-player frames also showed an Afterglow sample of 1.
+- Evidence limits: the opposing community was fictional and the broadcast used the local gate. No real incoming raid, second streamer, cross-channel Shared Chat, bot announcements/shoutouts, Channel Points, full five-minute retention measurement or retention lift was demonstrated. The hosted probe remains separate.
+- Capture sources: reviewed public-player frames in ignored `artifacts/capture/twitchflow/`, privacy-safe derivatives in `artifacts/twitchreview/`, and the 553.533-second OBS recording named `2026-10-31 23-39-51.mov`. Original capture/backdrop helpers are in `tools/capture/{stage,serve}.py`.
+- Codex result: user recordings genuinely show the shared RoundModule contract and three working subagents during enhancement work. The reviewed 10-second contract clip, 10-second working clip and optional 2.5-second completion clip retain hashes, privacy masks and frame-review evidence in `artifacts/codexreview/provenance.json`. They do not depict the original round-generation wave or show a readable test-total report. Original overlap remains the historical **17:50:26–17:51:52 UTC** interval in `docs/parallel.json`.
+- Media tools: `tools/video/cut.py` and `audit.py` add explicit local edit plans, scope/speed labels, captions, source hashes and output checks. The final edited/uploaded video remains pending; raw private captures are not public download links.
+- Documentation task: updated `README.md`, `devpost.md`, `docs/verify.md`, `docs/demo.md`, this log and AGENTS against the 609-test report and reviewed evidence. Formatted those files, `docs/hosted.json`, `docs/authority.md` and `improvement.md`; the last three retain their evidence/review content. Local screenshots in `docs/media/` retain explicit local-play labels, including optional Full Arena for the boss.
+- Documentation validation: repository-wide `pnpm format:check` passed; `devpost.md` was also explicitly formatted because the normal repository check excludes it. All 25 relative documentation/media links resolved. No application source or historical verification report changed in this documentation task.
+- Status: T17–T28 are checked for verified implementation. **T29/T30 remain open** until final source/media publication, an accessible under-three-minute video and the Devpost submission are complete. No public video URL is invented.

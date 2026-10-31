@@ -4,6 +4,7 @@ import type { HostedGrant } from './models.js';
 import { canonical, codes, hash, record, text, timestamp } from './shape.js';
 import type { DecionisTransport } from './transport.js';
 import { AuthorityFailure } from './errors.js';
+import type { AuthorizationWindow } from '../budget.js';
 
 interface GrantState {
   grant: HostedGrant;
@@ -11,6 +12,8 @@ interface GrantState {
   claimToken?: string;
   leaseExpiresAt?: number;
   unavailable?: boolean;
+  allowance?: { deadline: number; budgetMs: number };
+  claimExpired?: boolean;
 }
 
 /** Bearer material never enters a public Decision or a structured decision record. */
@@ -22,15 +25,25 @@ export class HostedGrants {
     private readonly now: () => number,
   ) {}
 
-  add(grant: HostedGrant): void {
+  add(grant: HostedGrant, allowance?: AuthorizationWindow): void {
     this.prune();
     if (this.grants.has(grant.id) || this.grants.size >= 10_000) throw new Error('POLICY_ERROR');
-    this.grants.set(grant.id, { grant: structuredClone(grant), state: 'issued' });
+    this.grants.set(grant.id, {
+      grant: structuredClone(grant),
+      state: 'issued',
+      ...(allowance
+        ? { allowance: { deadline: allowance.deadline, budgetMs: allowance.budgetMs } }
+        : {}),
+    });
   }
 
   async claim(id: string, budgetMs: number): Promise<boolean> {
     const entry = this.grants.get(id);
     if (!entry || entry.state !== 'issued' || entry.grant.expiresAt <= this.now()) return false;
+    const budget = entry.allowance
+      ? Math.min(entry.allowance.budgetMs, entry.allowance.deadline - this.now())
+      : Math.min(120, budgetMs);
+    if (budget <= 0) return false;
     entry.state = 'claiming';
     const grant = entry.grant;
     const binding = grant.captured.binding;
@@ -39,7 +52,7 @@ export class HostedGrants {
         await this.transport.request(
           `/v1/authority/grants/${encodeURIComponent(id)}/claims`,
           'enforce',
-          budgetMs,
+          budget,
           {
             execution_token: grant.token,
             intent_hash: grant.captured.hash,
@@ -88,6 +101,7 @@ export class HostedGrants {
         return false;
       entry.claimToken = token;
       entry.leaseExpiresAt = lease;
+      entry.claimExpired = entry.allowance !== undefined && entry.allowance.deadline <= this.now();
       entry.state = 'claimed';
       return true;
     } catch (error) {
@@ -101,7 +115,11 @@ export class HostedGrants {
     return entry?.state === 'claimed' && entry.leaseExpiresAt !== undefined
       ? {
           decisionId: entry.grant.decisionId,
-          expiresAt: Math.min(entry.grant.expiresAt, entry.leaseExpiresAt),
+          expiresAt: Math.min(
+            entry.grant.expiresAt,
+            entry.leaseExpiresAt,
+            entry.claimExpired ? this.now() : Infinity,
+          ),
         }
       : undefined;
   }

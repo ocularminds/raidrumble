@@ -87,6 +87,7 @@ export class StreamActions {
         run.ended = true;
         this.live.clearMatch(run.matchId);
         this.live.clearRoster(run.raiderId);
+        work.push(this.announce(hostId, room, run, true));
         work.push(this.shoutout(hostId, room, run));
       }
     }
@@ -157,7 +158,7 @@ export class StreamActions {
       );
     const existing = this.activeReward(hostId);
     if (existing) return { ...status, ...rewardView(existing) };
-    const room = this.rooms.get(hostId);
+    const room = this.rooms.primary(hostId);
     const config = room.gate.getConfig();
     const expiresAt =
       this.now() +
@@ -210,7 +211,7 @@ export class StreamActions {
     const credentials = await this.live.credentials(hostId, 'host');
     this.requireReward(hostId, pending);
     if (!credentials) throw new StreamError(401, 'Reconnect the host to configure Channel Points.');
-    const room = this.rooms.get(hostId);
+    const room = this.rooms.primary(hostId);
     let decision: Decision;
     try {
       decision =
@@ -342,18 +343,27 @@ export class StreamActions {
     return this.rooms.get(hostId).view();
   }
 
-  private async announce(hostId: string, room: Room, run: LiveRun): Promise<void> {
+  private async announce(hostId: string, room: Room, run: LiveRun, closing = false): Promise<void> {
+    const failure = closing
+      ? 'The closing community invitation could not be posted.'
+      : 'The Warlord chat link could not be posted.';
     try {
       const credentials = await this.live.credentials(hostId, 'bot');
       const botId = this.live.botUserId;
+      const view = room.view();
       if (
         !credentials ||
         !botId ||
         room.matchId !== run.matchId ||
-        room.view().match?.status !== 'playing'
+        view.simulated ||
+        view.match?.status !== (closing ? 'finished' : 'playing')
       )
         return;
-      const text = `RaidRumble is on! Follow the overlay keyword. Warlord, your Battering Ram is ready: ${run.link.url}`;
+      // Arena names have already passed content.render; never substitute raw Twitch names here.
+      const text = closing
+        ? `GG, both communities! ▲ Raiders: follow ${view.hostName} · ● Home Guard: check out ${view.raiderName}. The raid is over. The connection stays.`
+        : `⚔️ RaidRumble! ${view.raiderName}'s Raiders ▲ vs ${view.hostName}'s Home Guard ●. 3 rounds, 3 minutes. Type the word on screen. Wrong team? !join raiders / !join home. ${view.raiderName}, your Warlord controls: ${run.link.url}`;
+      if (text.length > 500) return;
       const lastSentAt = this.chatSent.get(hostId);
       const decision = await room.gate.authorize({
         action: 'chat.send',
@@ -362,22 +372,18 @@ export class StreamActions {
         matchId: run.matchId,
         payload: { text, templated: true, lastSentAt },
       });
-      if (
-        text.length > 500 ||
-        failed(decision) ||
-        (lastSentAt !== undefined && this.now() - lastSentAt < 5000)
-      )
+      if (failed(decision) || (lastSentAt !== undefined && this.now() - lastSentAt < 5000)) return;
+      if (this.runs.get(hostId) !== run || room.matchId !== run.matchId || run.ended !== closing)
         return;
-      if (room.matchId !== run.matchId || run.ended) return;
       this.chatSent.set(hostId, this.now());
       const result = await room.executor.executeHelix(
         decision,
         TwitchWrites.chat(hostId, botId, text),
         credentials,
       );
-      if (!result.executed) this.report(hostId, 'The Warlord chat link could not be posted.');
+      if (!result.executed) this.report(hostId, failure);
     } catch {
-      this.report(hostId, 'The Warlord chat link could not be posted.');
+      this.report(hostId, failure);
     }
   }
 

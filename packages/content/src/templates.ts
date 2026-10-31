@@ -1,6 +1,8 @@
 import type { Answer, ContentPack, Question } from '@raidrumble/engine';
 import type { Channels, Selection } from './model.js';
 import { display } from './model.js';
+import { bossFrom } from './boss.js';
+import { categoryKey, similarCategories } from './categories.js';
 
 export const demoChannels: Channels = {
   host: {
@@ -64,31 +66,25 @@ export function questionFrom(channels: Channels, selection: Selection, index: nu
   const other = channels[selection.about === 'host' ? 'raider' : 'host'];
   let value: string;
   let prompt: string;
-  let alternate: string;
+  let distractors: string[];
   const name =
     display(profile.name, 32) || (selection.about === 'host' ? 'the host' : 'the raider');
   if (selection.kind === 'fact') {
-    value = display(profile.facts.slice(0, 3)[selection.factIndex] ?? '');
+    const ownFacts = profile.facts.slice(0, 3).map((fact) => display(fact));
+    value = ownFacts[selection.factIndex] ?? '';
     prompt = `Which fact did ${name} share about their stream?`;
-    alternate = display(other.facts[0] ?? 'No fact was shared');
-  } else if (selection.kind === 'title') {
-    value = display(profile.title, 100);
-    prompt = `What is the title of ${name}’s stream?`;
-    alternate = display(other.title, 100);
+    distractors = distinct(other.facts.slice(0, 3), ownFacts);
+    if (!value || distractors.length < 2)
+      return questionFrom(channels, { ...selection, kind: 'category' }, index);
   } else {
+    // Two channels cannot supply three distinct known titles. Use category evidence instead
+    // of inventing another person's title or filling an option with a placeholder.
     value = display(profile.category, 70);
     prompt = `What is ${name} streaming right now?`;
-    alternate = display(other.category, 70);
+    distractors = distinct([display(other.category, 70), ...similarCategories(value)], [value]);
   }
   if (!value) return safeContent().questions[index] ?? safeContent().questions[0]!;
-  const distractors = [alternate, 'Not shared', 'Something else', 'Neither community'].filter(
-    (text, i, all) => text && text !== value && all.indexOf(text) === i,
-  );
-  const choices: [string, string, string] = [
-    value,
-    distractors[0] ?? 'Option two',
-    distractors[1] ?? 'Option three',
-  ];
+  const choices: [string, string, string] = [value, distractors[0]!, distractors[1]!];
   const slot = index % 3;
   [choices[0], choices[slot]] = [choices[slot]!, choices[0]];
   return {
@@ -102,19 +98,9 @@ export function questionFrom(channels: Channels, selection: Selection, index: nu
 }
 
 export function channelTemplates(channels: Channels): ContentPack {
-  const gardenRun =
-    [channels.host.category, channels.raider.category].includes('Gardening') &&
-    [channels.host.category, channels.raider.category].includes('Speedrunning');
   return {
     ...safeContent(),
-    boss: {
-      name: gardenRun
-        ? 'The Speedrun Gardener'
-        : display(`The ${channels.raider.category} ${channels.host.category} Guardian`, 60),
-      flavour: gardenRun
-        ? 'Speed meets growth. Bring both worlds together.'
-        : 'A fusion of your two worlds. Find its weak point together.',
-    },
+    boss: bossFrom(channels),
     questions: [
       questionFrom(channels, { about: 'host', kind: 'category', factIndex: 0 }, 0),
       questionFrom(channels, { about: 'raider', kind: 'category', factIndex: 0 }, 1),
@@ -130,4 +116,16 @@ export function channelTemplates(channels: Channels): ContentPack {
       ),
     ],
   };
+}
+
+function distinct(candidates: readonly string[], excluded: readonly string[]): string[] {
+  const seen = new Set(excluded.map(categoryKey));
+  return candidates
+    .map((candidate) => display(candidate))
+    .filter((candidate) => {
+      const key = categoryKey(candidate);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }

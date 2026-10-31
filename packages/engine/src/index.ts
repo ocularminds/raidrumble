@@ -1,6 +1,9 @@
 export type {
   Answer,
   ContentPack,
+  ContributorPop,
+  ContributorStreak,
+  MatchFeedback,
   MatchContext,
   MatchView,
   Mvp,
@@ -38,3 +41,5 @@ export { MatchTimeline } from './match.js';
 export type { MatchState, MatchInputResult } from './match.js';
 export { InputParser } from './input.js';
 export type { ChatCommand } from './input.js';
+export { Contributors } from './feedback.js';
+export type { ContributorState } from './feedback.js';

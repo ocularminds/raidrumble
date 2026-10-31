@@ -40,13 +40,15 @@ A local host approval does not count as hosted Presence evidence. A managed hold
 
 ## Failure behavior
 
-The live adapter caps each authority operation at 120 ms. Timeouts and failures use the action's configured rule: hold a match start, fall back to authored content, skip chat/shoutouts, block specials/setup, or write a local unsigned ledger record. Replay refusals, invalid bindings and explicit authority blocks never become local permission.
+In-match actions keep a 120 ms allowance. The setup actions `rumble.start`, `rumble.start.collab`, `rewards.configure`, and `events.subscribe` can use up to 1,500 ms. The immediate grant claim must fit the remaining allowance captured at authorization; individual requests do not restart that clock. A valid human approval receives a fresh bounded claim window without extending the original host approval deadline. The overlay shows an authored **RAID INCOMING** notice while a start is checked.
+
+Receipt finalization has a separate 120 ms bound. A pending receipt never hides an already started match or retries an executed effect. Timeouts and failures use the action's configured rule: hold a match start, fall back to authored content, skip chat/shoutouts, block specials/setup, or write a local unsigned ledger record. Replay refusals, invalid bindings and explicit authority blocks never become local permission.
 
 An unavailable grant claim can fall back only for `ledger.settle`, before any effect was dispatched, and only when its configured failure rule is `LOCAL`. The separate local decision records the failed remote decision and dossier identifiers in its request. The settlement or retention write is flagged unsigned; an error after the effect never triggers this fallback.
 
 ## Verification
 
-Account-backed checks on 31 October 2026 confirmed:
+The pre-enhancement account-backed checks on 31 October 2026 confirmed:
 
 - Primary runtime and enforcement credentials matched the configured organization. The primary key's `decision:run` scope also passed the default authority SHADOW route, with no execution grant.
 - A protocol shadow evaluation returned an observational ALLOW dossier. Its two Ed25519 artifacts passed the official `@decionis/verify` 0.5.0 verifier with `DECIONIS_OFFICIAL` trust.
@@ -54,9 +56,17 @@ Account-backed checks on 31 October 2026 confirmed:
 - The enforcement dossier's three Ed25519 artifacts, including the execution binding, passed the official verifier with confirmed Decionis issuer authenticity.
 - The actual production adapter retained its 120 ms cap and returned `POLICY_TIMEOUT` with `UNSIGNED_LEDGER_FALLBACK` instead of claiming a signed result.
 
-The protocol probe used a separate five-second diagnostic timeout; production code was unchanged. Observed authority requests took 153–834 ms. Hosted execution therefore requires latency work before it can reliably meet the stream budget from this environment. The signed evaluation identified the organization's existing `decionis-starter-v2+sitework-1` policy; RaidRumble-specific prerequisites are evaluated locally. These checks prove the protocol and grant lifecycle, not that a separate RaidRumble policy has been deployed to the authority or that a real Twitch raid has been exercised.
+That protocol probe used a separate five-second diagnostic timeout; production code at that checkpoint was unchanged. Observed authority requests took 153–834 ms, which motivated the current setup allowance. The signed evaluation identified the organization's existing `decionis-starter-v2+sitework-1` policy; RaidRumble-specific prerequisites are evaluated locally. Those checks prove the protocol and grant lifecycle, not that a separate RaidRumble policy has been deployed to the authority or that a real Twitch raid has been exercised.
 
-Sanitized local evidence is in ignored `artifacts/decionis/`: `credentials.json`, `shadow.json`, `primary.json`, `lifecycle.json`, and `signatures.txt`. Raw runtime credentials and grants are not committed. To verify a downloaded dossier:
+### Start using the production allowance
+
+At **21:59:57 UTC on 31 October**, the production `Room.raid` path started an isolated match with the real hosted authority and the configured **1,500 ms** allowance. There was no diagnostic timeout override. The overlay state changed from `incoming` to `active` at **1,475 ms**; authorization took 734 ms and the immediate claim took 717 ms. Optional content checks kept their 120 ms limits and used authored fallbacks.
+
+The start returned decision `f09ea72f-aa7a-445d-8ba4-088c9231d99b` and dossier `ae940576-ae47-419a-a7a6-424a5bdb793f`. The official verifier checked all three Ed25519 artifacts, including the execution binding, and confirmed Decionis issuer authenticity. The separate receipt request timed out at 120 ms; the already started match remained active. A signed dossier proves the evaluation and binding, not observation of the effect or successful receipt finalization.
+
+This run used fictional channel identities, no Twitch service and no persistent ledger. It verifies the real start path with hosted authority, not a real incoming Twitch raid. The narrow 25 ms margin also does not establish a latency guarantee for other environments. Slower starts still take the declared fallback. [Sanitized timing and signature evidence](hosted.json) is committed with the source.
+
+Local evidence is in ignored `artifacts/decionis/`: the earlier credential/protocol reports, `start.json`, `startdossier.json`, and `startsignatures.txt`. Raw runtime credentials and grants are not committed. To verify a downloaded dossier:
 
 ```sh
 npx -y @decionis/verify@0.5.0 --file path/to/dossier.json
