@@ -438,6 +438,7 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
 - [x] **T31** Terraform deployment to Azure Central US at `raids.decionis.com`, with HTTPS, persistent storage and hosted verification
 - [x] **T32** Publish a dedicated RaidRumble policy through the Decionis API and explicitly select its returned name/ID for evaluation
+- [x] **T33** Protect `master` and update the submitted Devpost project with the hosted link and current deployment wording
 
 T1–T30 describe verified implementation and the submission release delivered through [PR #3](https://github.com/ocularminds/raidrumble/pull/3), which passed 609 tests across 71 files. T31/T32 add the live Azure deployment and named policy in [PR #4](https://github.com/ocularminds/raidrumble/pull/4); the current release passes 728 tests across 85 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. The final video and completed Devpost submission are linked in `docs/demo.md`; `docs/submission.json` records the exact build session ID and submission confirmation.
 
@@ -479,3 +480,5 @@ T1–T30 describe verified implementation and the submission release delivered t
 - 2026-11-01 · T31/T32 integration checkpoint: Published named policy `raidrumble` / `raidrumble-v1`; 20 synthetic hosted cases and 40 signed artifacts verified. Added bound selectors, serialized EventSub setup and stale-policy/session guards; 728 tests across 85 files and all release checks pass. Final image rollout and Twitch delivery verification remain in progress.
 
 - 2026-11-01 · T31/T32: Deployed source `4041221` to Azure Central US at `raids.decionis.com` with the published policy UUID/version pinned. Five Twitch subscriptions are ready, all five setup claims have committed receipts with 15 verified signed artifacts, and one approved chat message reached Azure. Terraform reports no drift; 728 tests across 85 files and all release checks pass.
+
+- 2026-11-01 · T33: Protected `master` with required pull requests/resolved conversations, administrator enforcement and blocked force pushes/deletion. Devpost now has the live site, unchanged YouTube/repository links and no obsolete deployment disclaimer; public readback confirms three links and submitted status. 728 tests across 85 files pass.

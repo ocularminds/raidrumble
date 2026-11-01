@@ -14,7 +14,7 @@ This copy distinguishes implemented features from recorded evidence. The enhance
 
 **Submitted project:** <https://devpost.com/software/raidrumble>
 
-**Try it:** `pnpm i`, then `pnpm dev`. Open <http://localhost:5174> and click **Launch Test Raid**. No account is required for judge mode.
+**Try it:** <https://raids.decionis.com>. Click **Launch Test Raid** for the hosted preview; no Twitch account is required.
 
 **Demo video:** [RaidRumble — Test raid, real Twitch chat | Built with Codex](https://youtu.be/quotIlkegbI). Public, published November 1, 2026; 2:29 (149.333333 seconds), with English captions.
 
@@ -91,7 +91,7 @@ Automated coverage exercises those integration paths, including Warlord identity
 
 Designing for the smaller community improved both fairness and consent. Keeping rounds pure made parallel development practical. Separating recorded evidence from implementation coverage kept the submission honest.
 
-Next steps are repeated streamer sessions to measure participation, more plug-in rounds, and an opt-in rivalry leaderboard. Raid trains and an Extension are future possibilities, not features in this submission. No hosted deployment is claimed.
+Next steps are repeated streamer sessions to measure participation, more plug-in rounds, and an opt-in rivalry leaderboard. Raid trains and an Extension are future possibilities, not features in this submission.
 
 ## Testing instructions
 
