@@ -1,4 +1,6 @@
-export const apiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+import { apiBase } from './origin.js';
+
+export { apiBase } from './origin.js';
 
 export class Api {
   async get<T>(path: string): Promise<T> {

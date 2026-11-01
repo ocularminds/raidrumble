@@ -25,6 +25,8 @@ import type {
 import { uuid } from './shape.js';
 import { DecionisTransport } from './transport.js';
 import { AuthorizationWindow, approvalTimeout } from '../budget.js';
+import { PolicySelector } from './selection.js';
+import { LocalAssertion } from './assertion.js';
 
 export type { DecionisOptions } from './models.js';
 
@@ -33,6 +35,7 @@ interface PendingApproval {
   captured?: CapturedIntent;
   escalation?: ManagedEscalation;
   remote: boolean;
+  localHostApproved: boolean;
 }
 
 /** Local prerequisites followed by remotely bound authority, with unsigned failure receipts. */
@@ -47,10 +50,12 @@ export class DecionisGate implements ConfigurablePolicyGate {
   private readonly grants: HostedGrants;
   private readonly now: () => number;
   private readonly id: () => string;
+  private readonly selection: PolicySelector;
 
   constructor(config: PolicyConfig = defaultPolicy(), options: DecionisOptions = {}) {
     this.config = structuredClone(config);
     this.options = { ...options };
+    this.selection = new PolicySelector(options);
     this.now = options.now ?? Date.now;
     this.id = options.id ?? randomUUID;
     this.book = new DecisionBook(this, this.now);
@@ -66,10 +71,10 @@ export class DecionisGate implements ConfigurablePolicyGate {
     try {
       const local = this.evaluate(req, config);
       if (local.verdict !== 'ALLOW') return this.local(req, local, config, deadline);
+      return this.hosted(req, config, deadline, allowance, local);
     } catch {
       return this.failure(req, config, deadline, 'POLICY_ERROR');
     }
-    return this.hosted(req, config, deadline, allowance);
   }
 
   async approve(decisionId: string, approverTwitchId: string): Promise<Decision> {
@@ -138,9 +143,14 @@ export class DecionisGate implements ConfigurablePolicyGate {
     config: PolicyConfig,
     deadline: number,
     allowance: AuthorizationWindow,
+    local: PolicyEvaluation,
+    localHostApproved = false,
   ): Promise<Decision> {
     const mode = config.actions[req.action].mode ?? config.defaults.mode;
     try {
+      const assertion = this.selection.policyId
+        ? LocalAssertion.capture(req, local, localHostApproved)
+        : undefined;
       const remaining = allowance.remaining(this.now());
       if (deadline <= this.now() || remaining <= 0) throw new Error('POLICY_TIMEOUT');
       if (mode === 'shadow' && this.options.shadowRoute === 'protocol') {
@@ -153,12 +163,13 @@ export class DecionisGate implements ConfigurablePolicyGate {
             org_id: uuid(this.options.orgId),
             decision_type: req.action,
             mode: 'SHADOW',
-            context: req,
+            ...this.selection.protocol(),
+            context: { ...req, ...(assertion ? { raidrumble: assertion } : {}) },
             idempotency_key: id,
           },
           id,
         );
-        return this.issue(req, DecionisMapping.protocol(result), deadline);
+        return this.issue(req, DecionisMapping.protocol(result, this.selection), deadline);
       }
       const captured = DecionisMapping.capture(
         req,
@@ -166,6 +177,8 @@ export class DecionisGate implements ConfigurablePolicyGate {
         this.id(),
         this.now(),
         deadline,
+        this.selection,
+        assertion,
       );
       const result = await this.transport.request(
         '/v1/authority/grants',
@@ -180,7 +193,15 @@ export class DecionisGate implements ConfigurablePolicyGate {
         captured.binding.intent_id,
       );
       const mapped = DecionisMapping.authority(result, { captured, mode, nowMs: this.now() });
-      return this.accept(req, mapped, deadline, captured, allowance);
+      const current = this.evaluate(req, this.getConfig());
+      if (
+        current.verdict === 'BLOCK' ||
+        (mapped.decision.verdict === 'ALLOW' &&
+          current.verdict === 'ESCALATE' &&
+          !localHostApproved)
+      )
+        return this.local(req, current, config, deadline);
+      return this.accept(req, mapped, deadline, captured, allowance, localHostApproved);
     } catch (error) {
       return this.failure(
         req,
@@ -210,7 +231,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
     if (!pending.remote) {
       this.book.begin(decision);
       this.pending.delete(decision.decisionId);
-      return this.hosted(req, config, pending.deadline, allowance);
+      return this.hosted(req, config, pending.deadline, allowance, local, true);
     }
     if (!pending.captured || !pending.escalation) throw new Error('Hosted approval unavailable');
     const body = await this.transport.request(
@@ -224,10 +245,28 @@ export class DecionisGate implements ConfigurablePolicyGate {
       mode: 'enforce',
       nowMs: this.now(),
     });
+    const current = this.evaluate(req, this.getConfig());
+    if (
+      current.verdict === 'BLOCK' ||
+      (result?.decision.verdict === 'ALLOW' &&
+        current.verdict === 'ESCALATE' &&
+        !pending.localHostApproved)
+    ) {
+      this.book.begin(decision);
+      this.pending.delete(decision.decisionId);
+      return this.local(req, current, config, pending.deadline);
+    }
     if (!result) return decision;
     this.book.begin(decision);
     this.pending.delete(decision.decisionId);
-    return this.accept(req, result, pending.deadline, pending.captured, allowance);
+    return this.accept(
+      req,
+      result,
+      pending.deadline,
+      pending.captured,
+      allowance,
+      pending.localHostApproved,
+    );
   }
 
   private accept(
@@ -236,6 +275,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
     deadline: number,
     captured: CapturedIntent,
     allowance: AuthorizationWindow,
+    localHostApproved: boolean,
   ): Decision {
     if (result.grant) this.grants.add(result.grant, allowance);
     const decision = this.issue(req, result.decision, deadline);
@@ -244,6 +284,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
         deadline,
         captured,
         remote: true,
+        localHostApproved,
         ...(result.escalation ? { escalation: result.escalation } : {}),
       });
     return decision;
@@ -268,7 +309,7 @@ export class DecionisGate implements ConfigurablePolicyGate {
       failureRule,
     );
     if (decision.verdict === 'ESCALATE')
-      this.pending.set(decision.decisionId, { deadline, remote: false });
+      this.pending.set(decision.decisionId, { deadline, remote: false, localHostApproved: false });
     return decision;
   }
 

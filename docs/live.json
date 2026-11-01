@@ -1,0 +1,243 @@
+{
+  "verifiedAt": "2026-11-01T02:19:20.464Z",
+  "sourceImageCommit": "4041221e866c917f21a6b9463d19fec74a4e0f0e",
+  "expectedPolicy": {
+    "name": "raidrumble",
+    "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+    "version": "raidrumble-v1",
+    "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089"
+  },
+  "method": "GET existing dossiers and their Decision Chains; no evaluations, claims, receipts or effects issued by this check",
+  "requestCount": 11,
+  "verifier": "@decionis/verify 0.5.0",
+  "jwks": "https://api.decionis.com/.well-known/decision-dossier-jwks.json",
+  "verifiedCount": 5,
+  "recordCount": 5,
+  "limitations": [
+    "Dossier signatures establish the evaluation and bound authority, not the downstream Twitch effect.",
+    "Claim/finalization entries are the hosted canonical ledger projection with API-verified integrity; this check does not independently reconstruct the full ledger.",
+    "COMMITTED records the executor receipt; it is not independent Twitch observer confirmation or proof of a live incoming raid."
+  ],
+  "records": [
+    {
+      "decisionId": "e3e3ea37-8a5d-4763-9979-89ec07af91de",
+      "dossierId": "03c5b334-9142-4077-bd1f-73036cbf282b",
+      "action": "events.subscribe",
+      "verdict": "ALLOW",
+      "mode": "ENFORCEMENT",
+      "policy": {
+        "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+        "version": "raidrumble-v1",
+        "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+        "source": "org_policy_bundle",
+        "matchesExpected": true
+      },
+      "signature": {
+        "verified": true,
+        "artifactsChecked": 3,
+        "artifactPaths": ["/portable_artifact", "/inputs_snapshot", "/execution_binding"],
+        "requiredCoverageVerified": true
+      },
+      "executionBindingVerified": true,
+      "lifecycle": {
+        "chainId": "cfa89dcf-967f-49e9-b27d-d0d52fa8b190",
+        "chainIntegrityVerifiedByApi": true,
+        "linksTruncated": false,
+        "evidenceTruncated": false,
+        "claimed": true,
+        "receiptCommitted": true,
+        "evidence": [
+          {
+            "stage": "CLAIM",
+            "status": "CLAIMED",
+            "occurredAt": "2026-11-01T02:14:52.733Z",
+            "evidenceHashVerified": true
+          },
+          {
+            "stage": "FINALIZATION",
+            "status": "COMMITTED",
+            "occurredAt": "2026-11-01T02:14:52.889Z",
+            "evidenceHashVerified": true
+          }
+        ]
+      },
+      "verified": true
+    },
+    {
+      "decisionId": "c9e70839-68af-4276-92cd-ea9a0864d1f9",
+      "dossierId": "e7209bcc-1cc1-4bfa-93fb-f9b26b00aebd",
+      "action": "events.subscribe",
+      "verdict": "ALLOW",
+      "mode": "ENFORCEMENT",
+      "policy": {
+        "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+        "version": "raidrumble-v1",
+        "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+        "source": "org_policy_bundle",
+        "matchesExpected": true
+      },
+      "signature": {
+        "verified": true,
+        "artifactsChecked": 3,
+        "artifactPaths": ["/portable_artifact", "/inputs_snapshot", "/execution_binding"],
+        "requiredCoverageVerified": true
+      },
+      "executionBindingVerified": true,
+      "lifecycle": {
+        "chainId": "4c5cb8b5-f05e-4f11-982f-af4cf3962208",
+        "chainIntegrityVerifiedByApi": true,
+        "linksTruncated": false,
+        "evidenceTruncated": false,
+        "claimed": true,
+        "receiptCommitted": true,
+        "evidence": [
+          {
+            "stage": "CLAIM",
+            "status": "CLAIMED",
+            "occurredAt": "2026-11-01T02:12:06.098Z",
+            "evidenceHashVerified": true
+          },
+          {
+            "stage": "FINALIZATION",
+            "status": "COMMITTED",
+            "occurredAt": "2026-11-01T02:12:06.203Z",
+            "evidenceHashVerified": true
+          }
+        ]
+      },
+      "verified": true
+    },
+    {
+      "decisionId": "8e8d48b3-a19c-4d2d-b57b-2a9eac24d820",
+      "dossierId": "f7d1758d-64f9-47f1-afb2-85349a450cb5",
+      "action": "events.subscribe",
+      "verdict": "ALLOW",
+      "mode": "ENFORCEMENT",
+      "policy": {
+        "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+        "version": "raidrumble-v1",
+        "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+        "source": "org_policy_bundle",
+        "matchesExpected": true
+      },
+      "signature": {
+        "verified": true,
+        "artifactsChecked": 3,
+        "artifactPaths": ["/portable_artifact", "/inputs_snapshot", "/execution_binding"],
+        "requiredCoverageVerified": true
+      },
+      "executionBindingVerified": true,
+      "lifecycle": {
+        "chainId": "cdc05bcc-c6e8-40c3-93a4-f18c348bcaa4",
+        "chainIntegrityVerifiedByApi": true,
+        "linksTruncated": false,
+        "evidenceTruncated": false,
+        "claimed": true,
+        "receiptCommitted": true,
+        "evidence": [
+          {
+            "stage": "CLAIM",
+            "status": "CLAIMED",
+            "occurredAt": "2026-11-01T02:12:05.830Z",
+            "evidenceHashVerified": true
+          },
+          {
+            "stage": "FINALIZATION",
+            "status": "COMMITTED",
+            "occurredAt": "2026-11-01T02:12:05.933Z",
+            "evidenceHashVerified": true
+          }
+        ]
+      },
+      "verified": true
+    },
+    {
+      "decisionId": "a56a7f12-b424-46c2-ac5d-60e15d2d25b8",
+      "dossierId": "28e7931c-baa3-461f-82a8-8a5fb3c9c7b0",
+      "action": "events.subscribe",
+      "verdict": "ALLOW",
+      "mode": "ENFORCEMENT",
+      "policy": {
+        "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+        "version": "raidrumble-v1",
+        "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+        "source": "org_policy_bundle",
+        "matchesExpected": true
+      },
+      "signature": {
+        "verified": true,
+        "artifactsChecked": 3,
+        "artifactPaths": ["/portable_artifact", "/inputs_snapshot", "/execution_binding"],
+        "requiredCoverageVerified": true
+      },
+      "executionBindingVerified": true,
+      "lifecycle": {
+        "chainId": "94eb387e-5d2b-4af0-a767-146f1231d287",
+        "chainIntegrityVerifiedByApi": true,
+        "linksTruncated": false,
+        "evidenceTruncated": false,
+        "claimed": true,
+        "receiptCommitted": true,
+        "evidence": [
+          {
+            "stage": "CLAIM",
+            "status": "CLAIMED",
+            "occurredAt": "2026-11-01T02:12:05.562Z",
+            "evidenceHashVerified": true
+          },
+          {
+            "stage": "FINALIZATION",
+            "status": "COMMITTED",
+            "occurredAt": "2026-11-01T02:12:05.672Z",
+            "evidenceHashVerified": true
+          }
+        ]
+      },
+      "verified": true
+    },
+    {
+      "decisionId": "0821a8dd-7544-4323-8b01-41fe47cb301c",
+      "dossierId": "be55ef84-8dad-4303-b6b2-0637ccce9db9",
+      "action": "events.subscribe",
+      "verdict": "ALLOW",
+      "mode": "ENFORCEMENT",
+      "policy": {
+        "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+        "version": "raidrumble-v1",
+        "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+        "source": "org_policy_bundle",
+        "matchesExpected": true
+      },
+      "signature": {
+        "verified": true,
+        "artifactsChecked": 3,
+        "artifactPaths": ["/portable_artifact", "/inputs_snapshot", "/execution_binding"],
+        "requiredCoverageVerified": true
+      },
+      "executionBindingVerified": true,
+      "lifecycle": {
+        "chainId": "ef3c567e-5713-4ad1-9391-d4039b5382ec",
+        "chainIntegrityVerifiedByApi": true,
+        "linksTruncated": false,
+        "evidenceTruncated": false,
+        "claimed": true,
+        "receiptCommitted": true,
+        "evidence": [
+          {
+            "stage": "CLAIM",
+            "status": "CLAIMED",
+            "occurredAt": "2026-11-01T02:12:05.238Z",
+            "evidenceHashVerified": true
+          },
+          {
+            "stage": "FINALIZATION",
+            "status": "COMMITTED",
+            "occurredAt": "2026-11-01T02:12:05.376Z",
+            "evidenceHashVerified": true
+          }
+        ]
+      },
+      "verified": true
+    }
+  ]
+}

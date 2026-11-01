@@ -1,6 +1,7 @@
 import type { ArenaView } from '../../server/src/model.js';
 import { Arena } from './arena.js';
 import { Sound } from './sound.js';
+import { socketEndpoint } from './origin.js';
 import './style.css';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#arena');
@@ -14,12 +15,11 @@ document.addEventListener('pointerdown', () => {
 });
 const segments = location.pathname.split('/').filter(Boolean);
 const hostId = segments[1] ?? 'demo';
-const server = new URL(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
-server.protocol = server.protocol === 'https:' ? 'wss:' : 'ws:';
-server.pathname =
+const server = socketEndpoint(
   segments[0] === 'mirror'
     ? `/ws/mirror/${encodeURIComponent(hostId)}`
-    : `/ws/${encodeURIComponent(hostId)}`;
+    : `/ws/${encodeURIComponent(hostId)}`,
+);
 let view: ArenaView | undefined;
 let previous: ArenaView | undefined;
 let receivedAt = 0;

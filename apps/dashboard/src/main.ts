@@ -8,6 +8,7 @@ import { HostApproval } from './approval.js';
 import { PolicyActivity } from './activity.js';
 import { SetupGuide } from './setup.js';
 import { avatar, twitchSummary } from './copy.js';
+import { overlayBase } from './origin.js';
 import './style.css';
 
 const root = element('app');
@@ -32,8 +33,7 @@ function dashboard(): void {
   const activity = new PolicyActivity();
   const setup = new SetupGuide(hostId);
   element('reset').hidden = hostId !== 'demo';
-  element<HTMLIFrameElement>('preview').src =
-    `${import.meta.env.VITE_OVERLAY_URL ?? 'http://localhost:5173'}/overlay/${host}?preview=1`;
+  element<HTMLIFrameElement>('preview').src = `${overlayBase}/overlay/${host}?preview=1`;
 
   async function poll(): Promise<void> {
     try {

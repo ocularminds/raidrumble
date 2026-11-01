@@ -178,9 +178,11 @@ export interface PolicyGate {
   - Shadow protocol evaluation uses `/v1/protocol/evaluate-decision` where the key permits it. Bound execution uses `/v1/authority/grants`, atomic `/grants/{id}/claims`, and `/grants/{id}/receipts`. Every hosted enforcement ALLOW requires its own live, matching grant and claim.
   - Host-local policy remains a prerequisite. A Twitch click can satisfy a local escalation; it cannot fabricate hosted approval evidence. Hosted holds stay closed until remotely verified managed approval returns executable authority. Expose an approved HTTPS approval link when available and keep the original host deadline.
   - Keep bearer execution/claim tokens private. Preserve hosted decision/dossier IDs; label operational fallbacks as local/unsigned. A receipt failure after the effect must never cause the effect to be retried or be reported as unexecuted.
+  - Select the dedicated hosted policy explicitly with `DECIONIS_POLICY_ID` (named slug or immutable bundle UUID) and optional `DECIONIS_POLICY_VERSION`. Authority intents include `policy_id` and `policy_version` in `action.parameters` before canonical hashing; direct protocol evaluations use the documented top-level selectors. A version without an ID is invalid configuration. Publish named bundles through the API with the separate policy administration credential; publishing RaidRumble must not replace the unnamed workspace default.
+  - The dedicated bundle composes with the local per-host rules through an internally constructed, typed and hashed `context.raidrumble` assertion: application, action, local verdict/reason codes and local host approval. Caller payloads cannot set these assertions. Absent/unknown assertion combinations and action mismatches cannot automatically execute; the legacy DSL coerces scalar values and array membership, so it is not a general JSON type validator. Local host approval is recorded only by the existing authenticated local approval path and is never Decionis Presence evidence; it cannot release a managed hosted hold. The hosted policy admits only the nine governed actions with satisfied local prerequisites; it consumes authenticated runtime assertions rather than independently querying Twitch.
 - **`LocalPolicyGate`:** evaluates `policy/raidrumble.policy.yaml` in-process with identical semantics: shadow/enforce, ESCALATE and grants, reason codes. It writes unsigned local decision records.
   - This is what judges and CI use: **no Decionis account is required to run RaidRumble.**
-- **`executor.ts`:** the only module allowed to perform side effects. Signature: `execute(decision, effect)`. It checks the verdict, claims the grant if present, then runs the effect and finalizes hosted authority. Freeze the bound Helix descriptor before asynchronous work; uncertain effect outcomes finalize as `INDETERMINATE`.
+- **`executor.ts`:** the only module allowed to perform side effects. Signature: `execute(decision, effect, canExecute?)`. It checks the verdict, claims the grant if present, then runs the effect and finalizes hosted authority. An optional trusted, synchronous `canExecute` predicate is checked after the claim immediately before dispatch; a false or throwing predicate cancels without an effect and finalizes the consumed grant as `FAILED`. This prevents session replacement during a claim from dispatching stale work. It supplements every existing verdict, binding, budget and grant check. Freeze the bound Helix descriptor before asynchronous work; uncertain effect outcomes finalize as `INDETERMINATE`.
 
 ### 4.3 Governed actions (initial policy)
 
@@ -323,7 +325,18 @@ DECIONIS_GATEWAY_URL=        # e.g. https://raidrumble.decionisedge.com
 DECIONIS_API_KEY=
 DECIONIS_ENFORCE_API_KEY=
 DECIONIS_MODE=SHADOW         # SHADOW | ENFORCEMENT; legacy live maps to enforcement
+DECIONIS_POLICY_ID=          # named policy or immutable published bundle UUID
+DECIONIS_POLICY_VERSION=     # optional exact version; requires an ID
 ```
+
+### 5.4 Hosted deployment
+
+- Production serves the built dashboard, overlay, OAuth callback, API and WebSocket routes from one HTTPS origin. Development keeps the existing three-process commands.
+- Azure deployment reuses the Central US `decionis-aks` cluster, `decionisacr` registry, `decionis-nginx` ingress and DNS-01 certificate issuer used by SwarmPay. Terraform owns only RaidRumble resources and its `raids.decionis.com` DNS record.
+- Run one replica with a Recreate rollout and a persistent disk for the full data directory. Match state and Twitch/browser sessions remain in memory; a process restart requires reconnecting Twitch.
+- The hosted anonymous preview is bounded, uses authored templates and the local gate, and grants temporary control to one browser. It cannot change shared settings or consume paid generation. Authenticated channel controls keep their existing identity checks.
+- Runtime secrets are applied separately from Terraform and are never included in images, state, logs or source control. OAuth callback query strings must not enter ingress access logs.
+- EventSub setup serializes each channel's authorization, claim, Twitch write and receipt. Host and bot subscriptions share that channel queue because the hosted authority can bind them to the same concurrency scope. Queue before authorization so each action keeps its own bounded setup allowance; never retry an ambiguous effect or weaken a claim check to resolve contention.
 
 ## 6. Commands (keep these working at all times)
 
@@ -423,8 +436,10 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T28 / E12** Consistent US copy, feature names, arrows and Warlord feedback
 - [x] **T29** Current Devpost/README, committed media, accurate evidence and public default branch
 - [x] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
+- [x] **T31** Terraform deployment to Azure Central US at `raids.decionis.com`, with HTTPS, persistent storage and hosted verification
+- [x] **T32** Publish a dedicated RaidRumble policy through the Decionis API and explicitly select its returned name/ID for evaluation
 
-Completed checkboxes describe verified implementation and the release bundle delivered through [PR #3](https://github.com/ocularminds/raidrumble/pull/3). The enhancement checkout passes 609 tests across 71 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. The final video and completed Devpost submission are linked in `docs/demo.md`; `docs/submission.json` records the exact build session ID and submission confirmation.
+T1–T30 describe verified implementation and the submission release delivered through [PR #3](https://github.com/ocularminds/raidrumble/pull/3), which passed 609 tests across 71 files. T31/T32 add the live Azure deployment and named policy in [PR #4](https://github.com/ocularminds/raidrumble/pull/4); the current release passes 728 tests across 85 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. The final video and completed Devpost submission are linked in `docs/demo.md`; `docs/submission.json` records the exact build session ID and submission confirmation.
 
 ## 12. Build log (Codex appends a one-line summary here; details go in docs/codex.md)
 
@@ -459,3 +474,8 @@ Completed checkboxes describe verified implementation and the release bundle del
 - 2026-10-31 · T29/T30 progress: Captured two public babafesti Test Raid Real Chat sessions using one account, with a loss then boss victory and an Afterglow sample of 1; genuine Codex clips show the contract and later parallel enhancement work. Documentation reflects those limits; final video/publication/submission remain open.
 - 2026-11-01 · T29/T30 publication checkpoint: Published the reviewed 149.33-second video with English captions and the Siege thumbnail; added public transcript, contact sheet, provenance and verification records. Devpost story, video and four captioned screenshots are saved; final eligibility/submission and the default-branch merge remain open. The final rerun passes 609 tests across 71 files.
 - 2026-11-01 · T29/T30: Devpost confirmed “Project submitted!” after the user's eligibility and terms confirmations. The submitted entry uses session `01a1930a-c3f4-7b53-b90a-a523ae252545`; the public video, four screenshots, accurate documentation and final release bundle are recorded through PR #3. All twelve enhancements are complete; 609 tests across 71 files and formatting pass.
+- 2026-11-01 · T31 preparation: Added production static hosting, bounded public preview/WebSockets and OAuth sessions, a Linux image and scoped Azure Terraform. 654 tests across 78 files, build/typecheck, lint, formatting and all four simulations pass; deployment verification remains in progress.
+
+- 2026-11-01 · T31/T32 integration checkpoint: Published named policy `raidrumble` / `raidrumble-v1`; 20 synthetic hosted cases and 40 signed artifacts verified. Added bound selectors, serialized EventSub setup and stale-policy/session guards; 728 tests across 85 files and all release checks pass. Final image rollout and Twitch delivery verification remain in progress.
+
+- 2026-11-01 · T31/T32: Deployed source `4041221` to Azure Central US at `raids.decionis.com` with the published policy UUID/version pinned. Five Twitch subscriptions are ready, all five setup claims have committed receipts with 15 verified signed artifacts, and one approved chat message reached Azure. Terraform reports no drift; 728 tests across 85 files and all release checks pass.

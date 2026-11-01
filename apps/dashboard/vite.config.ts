@@ -6,6 +6,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
   const root = fileURLToPath(new URL('../../', import.meta.url));
   const env = loadEnv(mode, root, ['PUBLIC_BASE_URL', 'DASHBOARD_URL']);
   return {
+    build: { assetsDir: 'assets/dashboard' },
     plugins:
       command === 'serve' && !isPreview
         ? [

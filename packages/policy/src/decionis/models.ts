@@ -1,6 +1,8 @@
 import type { Decision, LocalPolicyOptions, PolicyMode } from '../models.js';
+import type { PolicySelection } from './selection.js';
+import type { RuntimeAssertion } from './assertion.js';
 
-export interface DecionisOptions extends Omit<LocalPolicyOptions, 'evaluate'> {
+export interface DecionisOptions extends Omit<LocalPolicyOptions, 'evaluate'>, PolicySelection {
   apiBase?: string;
   apiKey?: string;
   enforceApiKey?: string;
@@ -17,7 +19,7 @@ export interface IntentBinding {
   expires_at: string;
   actor: { id: string; type: string };
   action: { type: string; resource: string; parameters: Record<string, unknown> };
-  context: { idempotency_key: string };
+  context: { idempotency_key: string; raidrumble?: RuntimeAssertion };
   downstream_target: { system: string; operation: string };
 }
 

@@ -4,7 +4,7 @@
 
 ![Siege in the Lower Third overlay, local simulation](docs/media/siege.jpg)
 
-[Watch the demo · 2:29](https://youtu.be/quotIlkegbI) · [Devpost project](https://devpost.com/software/raidrumble) · [Public source](https://github.com/ocularminds/raidrumble) · [Build evidence](docs/codex.md)
+[Open RaidRumble](https://raids.decionis.com) · [Watch the demo · 2:29](https://youtu.be/quotIlkegbI) · [Devpost project](https://devpost.com/software/raidrumble) · [Public source](https://github.com/ocularminds/raidrumble) · [Build evidence](docs/codex.md)
 
 Published November 1, 2026, with English captions. [Captions](docs/media/video.srt) · [Transcript](docs/media/video.md) · [Contact sheet](docs/media/contact.jpg) · [Video provenance](docs/video.json).
 
@@ -13,6 +13,10 @@ Submitted to the **Codex x TwitchCon Hackathon**. Final source and evidence are 
 RaidRumble gives newcomers a shared game when they arrive. Raiders **orange ▲** meet Home Guard **blue ●**, compete, learn about each other, then fight one boss. The host chooses which raids enter.
 
 ## Try it in 60 seconds
+
+Open [the hosted dashboard](https://raids.decionis.com) and click **Launch Test Raid**. It runs an authored simulation without an account. The shared preview gives one visitor temporary control while everyone else can watch.
+
+To run your own copy locally:
 
 Use **Node ≥20.19** (tested on 20.20 and 22) and the repository’s pinned pnpm.
 
@@ -62,17 +66,23 @@ The gate returns **ALLOW**, **BLOCK**, or **ESCALATE** before an action. New liv
 
 Match starts, content, specials and every Twitch write—including EventSub setup—pass through policy, guarded by an automated source check. Local mode needs no account; [Decionis hosted authority](docs/authority.md) adds verified signed dossiers and single-use execution grants.
 
+Azure explicitly selects the [published raidrumble policy](docs/policy.md) by immutable bundle ID and version. Its 31 rules compose with each host's local settings; publishing it leaves unnamed workspace policies unchanged.
+
 ## Built with Codex
 
 Three round modules were generated as **overlapping sub-agent tasks in one build chat**, against the same `start / onInput / tick / result` lifecycle and serializable `view`. Each has deterministic tests.
 
 [AGENTS.md](AGENTS.md) was the contract. [Timestamped evidence](docs/parallel.json) records the concurrent round work at **17:50:26–17:51:52 UTC, October 31**. Later user-recorded Codex clips show that contract and three subagents working on the enhancements; they do not depict the original round-generation moment.
 
-The current enhancement checkout passes **609 tests across 71 files**, strict TypeScript, lint, production builds and all four headless scenarios. [Verification and evidence limits](docs/verify.md) distinguish those results from the historical 501-test checkpoint.
+The Azure release passes **728 tests across 85 files**, strict TypeScript, lint, production builds and all four headless scenarios. [Verification and evidence limits](docs/verify.md) preserve the earlier 609-test submission and 501-test connection checkpoints.
 
 Codex session: `01a1930a-c3f4-7b53-b90a-a523ae252545`.
 
 ## Go live on Twitch
+
+The [hosted app](https://raids.decionis.com) runs on Azure **Central US**. Connect **Host**, then **Bot**, and copy your OBS URL. [Deployment and recovery](docs/deploy.md) explains the Terraform stack, persistent storage and reconnect requirement after server restarts.
+
+For a separate installation:
 
 1. Register a Twitch app with an exact callback URL; follow [live setup](apps/server/src/live/README.md).
 2. Copy `.env.example` to `.env` and configure your Twitch app and deliberate bot identity.

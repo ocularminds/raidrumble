@@ -12,6 +12,7 @@ export interface RoomsOptions {
   settings: SettingsStore;
   config?: PolicyConfig;
   generator?: ContentGenerator;
+  ephemeralDemo?: boolean;
   quiet?: boolean;
   now?: () => number;
   regulars?: RegularStore;
@@ -40,7 +41,7 @@ export class Rooms {
     this.addHost(demoChannels.host);
     const demo = this.get('demo');
     const config = demo.settings();
-    if (!options.settings.get('demo'))
+    if (options.ephemeralDemo || !options.settings.get('demo'))
       demo.configure({ ...config, mode: 'enforce', allow: ['pixelpilot'], block: ['storm'] });
   }
 
@@ -70,20 +71,25 @@ export class Rooms {
   addHost(profile: ChannelProfile): void {
     this.profiles.set(profile.id, profile);
     if (this.all.has(profile.id)) return;
+    const ephemeral = profile.id === 'demo' && this.options.ephemeralDemo;
     const room = new Room({
       hostId: profile.id,
       config: this.options.config ?? defaultPolicy(),
-      generator: this.options.generator,
+      generator: profile.id === 'demo' ? undefined : this.options.generator,
       quiet: this.options.quiet,
       now: this.options.now,
       gateKind: profile.id === 'demo' ? 'local' : this.options.gateKind,
       decionis: profile.id === 'demo' ? undefined : this.options.decionis,
-      history: new HostHistory(profile.id, this.regulars, this.options.now ?? Date.now),
-      onSettle: (result) => this.settle(result),
-      onRetention: (matchId, count, decision) =>
-        this.options.ledger.retention(matchId, count, decision.source === 'local'),
+      history: ephemeral
+        ? undefined
+        : new HostHistory(profile.id, this.regulars, this.options.now ?? Date.now),
+      onSettle: ephemeral ? undefined : (result) => this.settle(result),
+      onRetention: ephemeral
+        ? undefined
+        : (matchId, count, decision) =>
+            this.options.ledger.retention(matchId, count, decision.source === 'local'),
     });
-    const saved = this.options.settings.get(profile.id);
+    const saved = ephemeral ? undefined : this.options.settings.get(profile.id);
     if (saved) room.configure(saved);
     this.all.set(profile.id, room);
     room.beginStream(this.session);
@@ -252,12 +258,15 @@ export class Rooms {
 
   private async startRaid(hostId: string, request: RaidRequest): Promise<void> {
     const room = this.primary(hostId);
-    const pair = this.options.ledger.pair(hostId, request.channels.raider.id);
+    const pair =
+      hostId === 'demo' && this.options.ephemeralDemo
+        ? undefined
+        : this.options.ledger.pair(hostId, request.channels.raider.id);
     const now = (this.options.now ?? Date.now)();
     const key = `${hostId}:${request.channels.raider.id}`;
     const raids = (this.raidHistory.get(key) ?? []).filter((time) => time > now - 3600000);
     raids.push(now);
-    this.raidHistory.set(key, raids);
+    if (!request.simulated) this.raidHistory.set(key, raids);
     room.setRematch(
       pair
         ? `REMATCH · ${pair.homeWins === pair.raiderWins ? 'TIED' : pair.homeWins > pair.raiderWins ? 'HOME LEADS' : 'RAIDERS LEAD'} ${pair.homeWins}–${pair.raiderWins}`
@@ -279,6 +288,7 @@ export class Rooms {
   }
 
   save(hostId: string): void {
+    if (hostId === 'demo' && this.options.ephemeralDemo) return;
     const settings = this.primary(hostId).settings();
     this.options.settings.set(hostId, settings);
     this.practices.get(hostId)?.configure(settings);

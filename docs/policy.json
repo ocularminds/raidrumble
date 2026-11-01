@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "publication": {
+    "name": "raidrumble",
+    "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+    "version": "raidrumble-v1",
+    "ruleCount": 31,
+    "publishedAt": "2026-11-01T01:48:09.933Z",
+    "endpoint": "/v1/protocol/policies/bundles",
+    "unrelatedPoliciesUnchanged": true
+  },
+  "verification": {
+    "checkedAt": "2026-11-01T01:52:03.339Z",
+    "bundleHash": "sha256:03c45d7f43839e3f020b315e1f7c628b474ec1bc3fe88ae947f9bc5f0b8ec873",
+    "rulesHash": "sha256:179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089",
+    "evaluationEndpoint": "/v1/authority/grants",
+    "mode": "SHADOW",
+    "diagnosticTimeoutMs": 5000,
+    "productionBudgetsChanged": false,
+    "claims": 0,
+    "effects": 0,
+    "jwks": "https://api.decionis.com/.well-known/decision-dossier-jwks.json",
+    "evidenceScope": "Named policy evaluation and signed policy selection; no execution authority, claims, effects or live Twitch facts.",
+    "limitations": [
+      "Local host assertions are authenticated runtime facts, not Decionis Twitch lookups or Presence attestations.",
+      "The legacy DSL coerces scalar booleans/numbers; scalarcoercion intentionally demonstrates that typed JSON is enforced by the application, not independently by this bundle."
+    ]
+  },
+  "signatures": {
+    "name": "@decionis/verify",
+    "version": "0.5.0",
+    "artifactsVerified": 40,
+    "source": "locally built official package"
+  },
+  "schemaValid": true,
+  "allCases": {
+    "passed": true,
+    "exactBundleSelected": true,
+    "exactVersionSelected": true,
+    "rulesHashMatched": true,
+    "signaturesVerified": true,
+    "artifactsPerCase": 2,
+    "artifactPaths": ["/portable_artifact", "/inputs_snapshot"],
+    "grantsIssued": 0,
+    "tokensIssued": 0,
+    "executionEligible": false
+  },
+  "cases": [
+    {
+      "name": "trusted",
+      "selector": "raidrumble",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 637,
+      "decisionId": "8dec65f8-c26e-4369-adb7-f2e8a9bd1384",
+      "dossierId": "c48d4a51-03b3-4531-9794-90b4a530c033",
+      "passed": true
+    },
+    {
+      "name": "blocked",
+      "selector": "raidrumble",
+      "expected": "BLOCK",
+      "verdict": "BLOCK",
+      "elapsedMs": 532,
+      "decisionId": "4615be49-fc3f-45c6-98eb-d34c5f7b027d",
+      "dossierId": "3b12d00d-e0d2-4552-a353-0c4f377f5621",
+      "passed": true
+    },
+    {
+      "name": "held",
+      "selector": "raidrumble",
+      "expected": "ESCALATE",
+      "verdict": "ESCALATE",
+      "elapsedMs": 501,
+      "decisionId": "04f61dd7-6903-418a-9cfc-4e3a767f3264",
+      "dossierId": "c86f5609-2842-4664-87ae-fbb9c5275d86",
+      "passed": true
+    },
+    {
+      "name": "localapproved",
+      "selector": "raidrumble",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 537,
+      "decisionId": "e6368db9-900e-4e18-9eec-1c6d43b66b11",
+      "dossierId": "45aee817-503e-4c9e-adee-dd276175282d",
+      "passed": true
+    },
+    {
+      "name": "trusted",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 615,
+      "decisionId": "f3e2b0f7-d581-4722-be27-2faa5a26f611",
+      "dossierId": "2e457a4b-2cbe-49cf-85c6-49c9f47ce80c",
+      "passed": true
+    },
+    {
+      "name": "blocked",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "BLOCK",
+      "verdict": "BLOCK",
+      "elapsedMs": 626,
+      "decisionId": "7ba9d2f8-d0fa-4e61-9088-413fb3aaa7b4",
+      "dossierId": "0f9a664d-789d-4aa3-99fc-e336abaa5e4d",
+      "passed": true
+    },
+    {
+      "name": "held",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ESCALATE",
+      "verdict": "ESCALATE",
+      "elapsedMs": 530,
+      "decisionId": "170129ec-16d9-4cf2-bf48-723ab0bac322",
+      "dossierId": "233c976a-2710-46d1-80b4-d50ad285ed6b",
+      "passed": true
+    },
+    {
+      "name": "localapproved",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 511,
+      "decisionId": "39d89d60-b9ac-4c37-a31d-570d6824a9df",
+      "dossierId": "23b68c1d-1479-41ff-872d-6e6c6ae3a063",
+      "passed": true
+    },
+    {
+      "name": "collab",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 506,
+      "decisionId": "2c946ace-1a88-4c31-b485-91dc8a03d74e",
+      "dossierId": "64f20e6b-168b-4f68-af19-10600d8797f9",
+      "passed": true
+    },
+    {
+      "name": "content",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 548,
+      "decisionId": "590de760-7905-4ea6-8b4e-20bb120e1a6e",
+      "dossierId": "80bfb886-44d0-40bb-8ef9-aa052615fd56",
+      "passed": true
+    },
+    {
+      "name": "chat",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 519,
+      "decisionId": "0aa2d2af-2be9-478b-a42b-9f8b40ded4ae",
+      "dossierId": "aaad914d-c0b0-4f53-8147-03830d638b86",
+      "passed": true
+    },
+    {
+      "name": "special",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 589,
+      "decisionId": "d5777206-5c96-4b46-b3ba-198d5a149cd2",
+      "dossierId": "bb53042f-0415-4019-90b6-136b7b70a61c",
+      "passed": true
+    },
+    {
+      "name": "rewardapproved",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 518,
+      "decisionId": "c767d885-15eb-4a09-b857-31289421cda0",
+      "dossierId": "1ac4a71e-98ca-49cb-a4d9-2556a53c5baf",
+      "passed": true
+    },
+    {
+      "name": "shoutout",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 533,
+      "decisionId": "d501e735-46cf-48d6-ac4b-f498bf77c593",
+      "dossierId": "1ed54cb8-f7cb-409b-99d9-c047fd8d7b53",
+      "passed": true
+    },
+    {
+      "name": "ledger",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 524,
+      "decisionId": "e8a37139-a2e0-40ff-aa26-3171c41f7240",
+      "dossierId": "1b710dc8-6a91-41a6-ae09-f66800d842f6",
+      "passed": true
+    },
+    {
+      "name": "events",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 514,
+      "decisionId": "e93f1d94-e82b-400d-b463-a45863bee334",
+      "dossierId": "d6959cb3-2f53-478f-ad02-16c79e643acb",
+      "passed": true
+    },
+    {
+      "name": "missing",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ESCALATE",
+      "verdict": "ESCALATE",
+      "elapsedMs": 560,
+      "decisionId": "eba8681b-3d7e-4466-8655-d8b66cd9bdb6",
+      "dossierId": "f275b962-b161-4839-984f-d3fca9eefb62",
+      "passed": true
+    },
+    {
+      "name": "mismatch",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "BLOCK",
+      "verdict": "BLOCK",
+      "elapsedMs": 516,
+      "decisionId": "336f1db7-92e7-4ef9-ba18-afac6cc36d22",
+      "dossierId": "47d1eaf8-7b06-47c6-b4d6-8a61922e1e4c",
+      "passed": true
+    },
+    {
+      "name": "unknownreason",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "BLOCK",
+      "verdict": "BLOCK",
+      "elapsedMs": 532,
+      "decisionId": "8457439d-ff9d-4ca0-8eb5-3ab2edecad0b",
+      "dossierId": "1487ad6c-cb6e-4895-aaec-d1a562f5a410",
+      "passed": true
+    },
+    {
+      "name": "scalarcoercion",
+      "selector": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "expected": "ALLOW",
+      "verdict": "ALLOW",
+      "elapsedMs": 605,
+      "decisionId": "75ab17ab-0f6a-44d5-a53b-55cca7a24b5a",
+      "dossierId": "015a01ab-4fe1-452e-87f9-a3fe9ebd369e",
+      "passed": true
+    }
+  ],
+  "contractReferences": [
+    "https://docs.decionis.com/decision-evaluation",
+    "https://docs.decionis.com/.well-known/openapi.json"
+  ]
+}

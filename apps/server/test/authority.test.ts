@@ -50,6 +50,27 @@ describe('authority configuration', () => {
     );
   });
 
+  it.each(['raidrumble', 'dde00498-24ae-4eab-8bf0-8094f9a2ac59'])(
+    'passes the explicit policy selector %s and version to the hosted gate',
+    (policyId) => {
+      const config = authorityConfig({
+        POLICY_GATE: 'decionis',
+        DECIONIS_POLICY_ID: policyId,
+        DECIONIS_POLICY_VERSION: 'raidrumble-v1',
+      });
+      expect(config.decionis).toMatchObject({ policyId, policyVersion: 'raidrumble-v1' });
+    },
+  );
+
+  it('rejects a policy version without an explicit policy identity', () => {
+    expect(() =>
+      authorityConfig({ POLICY_GATE: 'decionis', DECIONIS_POLICY_VERSION: 'raidrumble-v1' }),
+    ).toThrow('DECIONIS_POLICY_ID');
+    expect(
+      authorityConfig({ POLICY_GATE: 'local', DECIONIS_POLICY_VERSION: 'raidrumble-v1' }),
+    ).toEqual({ gateKind: 'local' });
+  });
+
   it('keeps the judge room local when real channels use hosted authority', async () => {
     const ledger = new Ledger(':memory:');
     const rooms = new Rooms({
