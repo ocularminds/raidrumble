@@ -1,0 +1,63 @@
+1
+00:00:00,000 --> 00:00:13,133
+One raid. Three rounds. A reason to stay. A one-account test raid on babafesti, driven by real Twitch chat.
+
+2
+00:00:13,133 --> 00:00:23,133
+Lower Third keeps the upper 70% of the stream visible. Counted moves show names and streaks; sound is opt-in.
+
+3
+00:00:23,133 --> 00:00:35,133
+Judge mode: 300 simulated Raiders face 20 Home Guard. Participation rates make the final push count.
+
+4
+00:00:35,133 --> 00:00:47,633
+Know Your Host uses A/B/C answers. This practice shows an authored fallback question.
+
+5
+00:00:47,633 --> 00:00:59,233
+Fusion Boss turns opponents into teammates. Hit the shared boss; weak-point keywords deal triple damage.
+
+6
+00:00:59,233 --> 00:01:10,833
+Boss defeated in this one-account real-chat test. The end card invites both communities to follow.
+
+7
+00:01:10,833 --> 00:01:14,233
+Afterglow: 1 recently active raider. One-account test.
+
+8
+00:01:14,233 --> 00:01:22,433
+An unknown raid waits for the host. Trust next time takes effect only after successful acceptance.
+
+9
+00:01:22,433 --> 00:01:28,333
+Enforced policy blocks an unfamiliar two-day-old account before the rumble starts.
+
+10
+00:01:28,333 --> 00:01:38,333
+Separate hosted start: 1,475 ms. Signed evaluation and binding verified; receipt finalization timed out.
+
+11
+00:01:38,333 --> 00:01:48,333
+One Codex chat. AGENTS.md defines pure plug-in rounds: start, onInput, tick and result.
+
+12
+00:01:48,333 --> 00:01:58,333
+Genuine Codex app capture: three subagents working during the enhancement pass.
+
+13
+00:01:58,333 --> 00:02:06,333
+The original three rounds were built concurrently. Timestamped task records document their shared overlap.
+
+14
+00:02:06,333 --> 00:02:12,333
+609 tests across 71 files. Attribution, fairness, spam limits, grants and all four scenarios verified.
+
+15
+00:02:12,333 --> 00:02:22,333
+Full Arena is optional. Both communities win together, then discover each other through the follow invitations.
+
+16
+00:02:22,333 --> 00:02:29,333
+Try it without accounts: pnpm i, then pnpm dev. github.com/ocularminds/raidrumble

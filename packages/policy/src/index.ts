@@ -21,6 +21,7 @@ export type {
   Verdict,
 } from './models.js';
 export { defaultPolicy } from './defaults.js';
+export { actionBudget, approvalTimeout } from './budget.js';
 export { parsePolicy, loadPolicy } from './config.js';
 export { LocalPolicyGate } from './local.js';
 export { PolicyExecutor } from './executor.js';

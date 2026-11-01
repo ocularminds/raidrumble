@@ -58,6 +58,7 @@ export interface PredicateRule {
 }
 export interface ActionPolicy {
   mode?: PolicyMode;
+  latencyBudgetMs?: number;
   block: PredicateRule[];
   escalate?: PredicateRule[];
   allow: PredicateRule[];

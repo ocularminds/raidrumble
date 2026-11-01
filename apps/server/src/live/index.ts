@@ -107,6 +107,9 @@ export class LiveService {
   profile(hostId: string): LiveProfile | undefined {
     return this.events.profile(hostId);
   }
+  sharedChannels(hostId: string): readonly { id: string; name: string }[] {
+    return this.events.sharedChannels(hostId);
+  }
   get botUserId(): string | undefined {
     return this.options.botUserId;
   }

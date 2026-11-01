@@ -1,0 +1,129 @@
+.setupStrip {
+  margin-top: 16px;
+  padding: 18px 22px;
+  border: 1px solid #374b42;
+  border-radius: 10px;
+  background: #15231f;
+}
+.setupHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.setupHeading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.setupSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 17px;
+}
+.setupSteps > div {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.setupSteps .button {
+  width: 100%;
+}
+.setupSteps small,
+.practicePanel small {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #9eada1;
+}
+#setupNotice {
+  margin: 16px 0 0;
+}
+.button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
+}
+.practicePanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  margin-top: 16px;
+  border: 1px solid #405064;
+  border-radius: 10px;
+  background: #172330;
+}
+.practicePanel h3 {
+  font-size: 18px;
+  margin: 8px 0;
+}
+.practicePanel p {
+  max-width: 65ch;
+  margin: 8px 0;
+}
+.practiceActions {
+  flex-shrink: 0;
+  display: grid;
+  gap: 10px;
+}
+.systemActivity {
+  margin-top: 16px;
+  color: #9cadb4;
+  font-size: 10px;
+}
+.systemActivity summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.network.compact {
+  min-height: 72px;
+}
+.network.compact .empty {
+  padding: 12px 0;
+  margin: 0;
+}
+.approval {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.approval > div:first-child {
+  flex: 1 1 320px;
+}
+.approval > .muted {
+  flex-basis: 100%;
+  margin: 0;
+}
+.trustChoice {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+.heroCopy {
+  min-width: 0;
+}
+.hero h2 {
+  font-size: clamp(30px, 3.1vw, 44px);
+}
+@media (max-width: 1000px) {
+  .setupSteps {
+    gap: 12px;
+  }
+  .practicePanel {
+    flex-wrap: wrap;
+  }
+  .practiceActions {
+    width: 100%;
+  }
+}
+@media (max-width: 580px) {
+  .setupSteps {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .setupHeading {
+    align-items: start;
+  }
+  .setupStrip,
+  .practicePanel {
+    padding: 18px;
+  }
+}

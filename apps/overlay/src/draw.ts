@@ -109,4 +109,21 @@ export class Paint {
       this.text(this.fit(value, width, size), x, top + row * size * 1.3, size, color, 'center'),
     );
   }
+
+  wrappedSize(text: string, width: number, height: number, preferred = 32, minimum = 24): number {
+    for (let size = preferred; size >= minimum; size -= 2) {
+      this.ctx.font = `600 ${size}px "Avenir Next", "Segoe UI", sans-serif`;
+      let lines = 1;
+      let line = '';
+      for (const word of text.split(/\s+/)) {
+        const next = line ? `${line} ${word}` : word;
+        if (line && this.ctx.measureText(next).width > width) {
+          lines++;
+          line = word;
+        } else line = next;
+      }
+      if (lines * size * 1.3 <= height) return size;
+    }
+    return minimum;
+  }
 }

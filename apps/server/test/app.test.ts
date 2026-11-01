@@ -167,14 +167,24 @@ describe('host API and real match integration', () => {
     expect(runtime.rooms.get('demo').view().status).toBe('idle');
   });
 
-  it('blocks an unwelcome raid without showing a match', async () => {
+  it('blocks an unknown two-day-old raider without a blocklist entry or match', async () => {
     const response = await runtime.app.inject({
       method: 'POST',
       url: '/api/demo',
       payload: { scenario: 'hate-raid' },
     });
-    expect(response.json()).toMatchObject({ status: 'idle', decision: { verdict: 'BLOCK' } });
+    expect(response.json()).toMatchObject({
+      status: 'idle',
+      decision: { verdict: 'BLOCK', reasonCodes: ['RAIDER_ACCOUNT_TOO_NEW'] },
+    });
     expect(response.json().match).toBeUndefined();
+    const room = runtime.rooms.get('demo');
+    const request = room.gate.getRequest(response.json().decision.decisionId)!;
+    expect(request.payload.raiderAccountAgeDays).toBe(2);
+    expect(request.payload.hasPriorMatch).toBe(false);
+    expect(room.settings().block).not.toContain(request.payload.raiderLogin);
+    expect(room.settings().allow).not.toContain(request.payload.raiderLogin);
+    expect(runtime.ledger.pair('demo', request.channel.raiderId!)).toBeUndefined();
   });
 
   it('accepts an actual host-inclusive Shared Chat session', async () => {

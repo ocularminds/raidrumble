@@ -2,7 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { parseDocument } from 'yaml';
 import { defaultPolicy } from './defaults.js';
 import { actionNames } from './models.js';
+import { budgetLimit } from './budget.js';
 import type {
+  ActionName,
   ActionPolicy,
   FailureRule,
   PolicyConfig,
@@ -57,10 +59,21 @@ function rules(value: unknown): PredicateRule[] {
   });
 }
 
-function action(value: unknown, base: ActionPolicy, config: PolicyConfig): ActionPolicy {
+function action(
+  value: unknown,
+  base: ActionPolicy,
+  config: PolicyConfig,
+  name: ActionName,
+): ActionPolicy {
   const input = object(value, 'action');
-  keys(input, ['mode', 'block', 'escalate', 'allow', 'otherwise', 'onFailure'], 'action field');
+  keys(
+    input,
+    ['mode', 'latencyBudgetMs', 'block', 'escalate', 'allow', 'otherwise', 'onFailure'],
+    'action field',
+  );
   const result = structuredClone(base);
+  if (input.latencyBudgetMs !== undefined)
+    result.latencyBudgetMs = number(input.latencyBudgetMs, 1, budgetLimit(name));
   if (input.mode !== undefined)
     result.mode = choice<PolicyMode>(input.mode, ['shadow', 'enforce'], 'mode');
   if (input.block !== undefined) result.block = rules(input.block);
@@ -129,7 +142,7 @@ export function parsePolicy(source: string): PolicyConfig {
     keys(actions, [...actionNames], 'action');
     for (const name of actionNames)
       if (actions[name] !== undefined)
-        config.actions[name] = action(actions[name], config.actions[name], config);
+        config.actions[name] = action(actions[name], config.actions[name], config, name);
   }
   return config;
 }

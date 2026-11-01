@@ -248,7 +248,7 @@ describe('hosted claim and receipt boundary', () => {
     expect(wire.calls.at(-1)?.path).toBe(`/v1/authority/grants/${grantId}/receipts`);
   });
 
-  it('bounds Helix dispatch to the remaining grant window', async () => {
+  it('bounds Helix dispatch to the remaining claim lease', async () => {
     vi.useFakeTimers();
     const wire = new HostedFixture();
     const { gate } = wire.gate();
@@ -256,7 +256,10 @@ describe('hosted claim and receipt boundary', () => {
     req.actor = { kind: 'system', twitchUserId: 'bot' };
     req.payload = { text: 'Welcome', templated: true };
     const decision = await gate.authorize(req);
-    wire.time += 9_900;
+    wire.handler = (path, body) =>
+      path.endsWith('/claims')
+        ? json({ ...wire.claim(), claim_lease_expires_at: new Date(wire.time + 100).toISOString() })
+        : wire.respond(path, body);
     const helix = vi.fn<typeof fetch>(
       (_input, init) =>
         new Promise((_resolve, reject) => {

@@ -19,16 +19,28 @@ describe('policy latency and failure defaults', () => {
     ['events.subscribe', 'BLOCK', 'ACTION_BLOCKED'],
   ];
 
-  it.each(failures)('%s applies its failure rule after 120ms', async (action, verdict, reason) => {
-    vi.useFakeTimers();
-    const gate = new LocalPolicyGate(defaultPolicy(), {
-      evaluate: () => new Promise(() => undefined),
-      logger: () => undefined,
-    });
-    const pending = gate.authorize(request(action));
-    await vi.advanceTimersByTimeAsync(120);
-    expect(await pending).toMatchObject({ verdict, reasonCodes: expect.arrayContaining([reason]) });
-  });
+  it.each(failures)(
+    '%s applies its failure rule at its action deadline',
+    async (action, verdict, reason) => {
+      vi.useFakeTimers();
+      const gate = new LocalPolicyGate(defaultPolicy(), {
+        evaluate: () => new Promise(() => undefined),
+        logger: () => undefined,
+      });
+      const pending = gate.authorize(request(action));
+      await vi.advanceTimersByTimeAsync(
+        ['rumble.start', 'rumble.start.collab', 'rewards.configure', 'events.subscribe'].includes(
+          action,
+        )
+          ? 1500
+          : 120,
+      );
+      expect(await pending).toMatchObject({
+        verdict,
+        reasonCodes: expect.arrayContaining([reason]),
+      });
+    },
+  );
 
   it('allows host approval of a start held because evaluation failed', async () => {
     const config = defaultPolicy();

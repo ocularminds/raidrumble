@@ -83,4 +83,15 @@ describe('gated content with factual provenance', () => {
     });
     expect((await service.create(demoChannels)).boss).toEqual(safeContent().boss);
   });
+
+  it('gates every factual distractor before a question can reach the overlay', async () => {
+    const channels = {
+      ...demoChannels,
+      raider: { ...demoChannels.raider, facts: ['A public fact.', 'forbidden alternative'] },
+    };
+    const service = new ContentService(gate(['forbidden']));
+    const content = await service.create(channels);
+    expect(content.questions[2]).toEqual(safeContent().questions[2]);
+    expect(JSON.stringify(content)).not.toContain('forbidden');
+  });
 });

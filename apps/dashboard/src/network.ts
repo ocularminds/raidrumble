@@ -1,3 +1,5 @@
+import { channelLabel, plural } from './copy.js';
+
 interface Network {
   nodes: { id: string; name?: string }[];
   edges: { source: string; target: string; matches: number; bossKills: number }[];
@@ -17,7 +19,14 @@ export class RivalryMap {
     const signature = JSON.stringify(graph);
     if (this.signature === signature) return;
     this.signature = signature;
-    if (!graph.nodes.length) return;
+    this.target.className = graph.nodes.length ? 'network' : 'network compact';
+    if (!graph.nodes.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty';
+      empty.textContent = 'Complete a match to make your first connection.';
+      this.target.replaceChildren(empty);
+      return;
+    }
     const nodes = graph.nodes.slice(0, 30).map((node, index) => ({
       ...node,
       x: 390 + Math.cos((index / graph.nodes.length) * Math.PI * 2) * 190,
@@ -71,7 +80,7 @@ export class RivalryMap {
       }))
         line.setAttribute(key, String(value));
       const title = document.createElementNS(ns, 'title');
-      title.textContent = `${edge.matches} matches · ${edge.bossKills} bosses defeated`;
+      title.textContent = `${plural(edge.matches, 'match', 'matches')} · ${plural(edge.bossKills, 'boss', 'bosses')} defeated`;
       line.append(title);
       svg.append(line);
       this.label(
@@ -83,7 +92,7 @@ export class RivalryMap {
         10,
       );
     }
-    for (const node of nodes) {
+    for (const [index, node] of nodes.entries()) {
       const home = node.id === this.hostId;
       const circle = document.createElementNS(ns, 'circle');
       for (const [key, value] of Object.entries({
@@ -96,7 +105,7 @@ export class RivalryMap {
       }))
         circle.setAttribute(key, String(value));
       svg.append(circle);
-      this.label(svg, node.name ?? `Channel ${node.id}`, node.x, node.y + 46, '#dce5d5', 14);
+      this.label(svg, channelLabel(node, index), node.x, node.y + 46, '#dce5d5', 14);
     }
     this.target.replaceChildren(svg);
   }

@@ -9,6 +9,7 @@ import {
 } from '@raidrumble/twitch';
 import type { LiveAccount, LiveClient, LiveOptions, LiveProfile, LiveStatus } from './model.js';
 import { enrichRaid } from './profile.js';
+import { SharedChannels } from './shared.js';
 
 interface HostReadiness {
   required: Set<string>;
@@ -35,12 +36,15 @@ export class LiveEvents {
   private readonly issues = new Map<string, { order: number; message: string }>();
   private issueSequence = 0;
   private validationTimer?: ReturnType<typeof setInterval>;
+  private readonly shared: SharedChannels;
 
   constructor(
     private readonly options: LiveOptions,
     private readonly oauth: OAuthClient | undefined,
     private readonly now: () => number,
-  ) {}
+  ) {
+    this.shared = new SharedChannels(options);
+  }
 
   async addHost(account: LiveAccount): Promise<void> {
     const hostId = account.identity.userId;
@@ -48,6 +52,7 @@ export class LiveEvents {
     this.hosts.set(hostId, account);
     this.hostReadiness.delete(hostId);
     this.received.delete(hostId);
+    this.shared.clear(hostId);
     const client = this.create({
       onSession: async (sessionId, { reconnected }) => {
         if (this.hosts.get(hostId) !== account || account.revoked || reconnected) return;
@@ -75,6 +80,7 @@ export class LiveEvents {
       onNotification: (event) => this.hostEvent(hostId, account, event),
       onRevocation: () => {
         account.revoked = true;
+        this.shared.clear(hostId);
         client.stop();
         this.report(hostId, 'Twitch authorization was revoked. Reconnect this channel.');
       },
@@ -176,6 +182,11 @@ export class LiveEvents {
     return account && !account.revoked ? structuredClone(account.profile) : undefined;
   }
 
+  sharedChannels(hostId: string): readonly { id: string; name: string }[] {
+    const account = this.hosts.get(hostId);
+    return account && !account.revoked ? this.shared.get(hostId) : [];
+  }
+
   async credentials(hostId: string, role: 'host' | 'bot'): Promise<HelixCredentials | undefined> {
     const host = this.hosts.get(hostId);
     const account = role === 'host' ? host : this.bot;
@@ -217,6 +228,7 @@ export class LiveEvents {
     this.received.clear();
     this.issues.clear();
     this.issueSequence = 0;
+    this.shared.clear();
   }
 
   private create(options: EventSubOptions): LiveClient {
@@ -306,7 +318,11 @@ export class LiveEvents {
         );
       } else if (event.type === 'shared' && event.channelId === hostId) {
         this.rememberEvent(hostId, event.type);
-        await this.options.onShared(hostId, event.phase === 'end' ? [] : [...event.participants]);
+        const participants = event.phase === 'end' ? [] : [...event.participants];
+        await Promise.all([
+          this.shared.update(account, participants),
+          this.options.onShared(hostId, participants),
+        ]);
       } else if (event.type === 'redemption' && event.channelId === hostId) {
         this.rememberEvent(hostId, event.type);
         await this.options.onRedemption?.(hostId, event);
@@ -389,6 +405,7 @@ export class LiveEvents {
             if (this.hosts.get(account.identity.userId) === account)
               this.clients.get(account.identity.userId)?.stop();
             this.clearRoster(account.identity.userId);
+            this.shared.clear(account.identity.userId);
             this.report(
               this.bot === account ? '' : account.identity.userId,
               'Twitch authorization expired. Reconnect this account.',

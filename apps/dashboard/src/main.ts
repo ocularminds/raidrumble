@@ -1,10 +1,13 @@
 import type { DashboardView } from '../../server/src/model.js';
-import { Api, apiBase, element, toast } from './api.js';
+import { Api, element, toast } from './api.js';
 import { layout } from './layout.js';
 import { RivalryMap } from './network.js';
 import { warlord } from './warlord.js';
 import { StreamControls } from './controls.js';
 import { HostApproval } from './approval.js';
+import { PolicyActivity } from './activity.js';
+import { SetupGuide } from './setup.js';
+import { avatar, twitchSummary } from './copy.js';
 import './style.css';
 
 const root = element('app');
@@ -23,12 +26,12 @@ function dashboard(): void {
   let data: DashboardView | undefined;
   let populated = false;
   let busy = false;
+  let refreshAllow = false;
   const streamControls = new StreamControls(hostId, api, poll);
   const approval = new HostApproval();
-  const authUrl = `${apiBase}/auth/host`;
-  element<HTMLAnchorElement>('authHost').href = authUrl;
-  element<HTMLAnchorElement>('connectHost').href = authUrl;
-  element<HTMLAnchorElement>('authBot').href = `${apiBase}/auth/bot`;
+  const activity = new PolicyActivity();
+  const setup = new SetupGuide(hostId);
+  element('reset').hidden = hostId !== 'demo';
   element<HTMLIFrameElement>('preview').src =
     `${import.meta.env.VITE_OVERLAY_URL ?? 'http://localhost:5173'}/overlay/${host}?preview=1`;
 
@@ -43,16 +46,23 @@ function dashboard(): void {
             : 'Twitch setup incomplete';
       element('channelName').textContent =
         hostId === 'demo' ? 'Practice arena' : data.arena.hostName;
+      element('avatar').textContent = avatar(hostId, data.arena.hostName);
       element('channelStatus').textContent =
         hostId === 'demo'
           ? 'LOCAL / NO ACCOUNT NEEDED'
           : data.twitch.hostConnected
             ? 'TWITCH / SIGNED IN'
             : 'TWITCH / RECONNECT';
-      const active = data.arena.status === 'active' || data.arena.status === 'pending';
+      const active = ['active', 'pending', 'incoming'].includes(data.arena.status);
       element('matchPill').textContent =
-        data.arena.match?.round?.title.toUpperCase() ??
-        (data.arena.status === 'pending' ? 'AWAITING APPROVAL' : 'STANDING BY');
+        data.arena.practice === 'realchat'
+          ? 'TEST RAID · REAL TWITCH CHAT'
+          : (data.arena.match?.round?.title.toUpperCase() ??
+            (data.arena.status === 'incoming'
+              ? 'RAID INCOMING'
+              : data.arena.status === 'pending'
+                ? 'AWAITING APPROVAL'
+                : 'STANDING BY'));
       for (const button of document.querySelectorAll<HTMLButtonElement>(
         '[data-scenario], #testRaid',
       ))
@@ -64,34 +74,28 @@ function dashboard(): void {
       element('oilBudget').textContent = data.budgets?.oil === 0 ? 'USED' : '1 / MATCH';
       element<HTMLAnchorElement>('openOverlay').href = `${data.overlayUrl}?preview=1`;
       approval.update(data);
-      const twitch = data.twitch;
-      element('authState').textContent = twitch.configured
-        ? [
-            twitch.hostConnected ? 'Host connected' : 'Host not connected',
-            twitch.botConnected ? 'Bot connected' : 'Bot not connected',
-            ...(twitch.hostConnected
-              ? [twitch.hostEventsConnected ? 'Raid events ready' : 'Raid events pending']
-              : []),
-            ...(twitch.botConnected
-              ? [twitch.chatEventsConnected ? 'Chat ready' : 'Chat pending']
-              : []),
-            ...(twitch.eventCount ? [`${twitch.eventCount} events received`] : []),
-            ...(twitch.setupError ? [twitch.setupError] : []),
-          ].join(' · ')
-        : 'Set TWITCH_* in .env to connect real channels.';
+      element('authState').textContent = twitchSummary(data.twitch);
+      setup.update(data);
       if (!populated) {
         for (const key of ['allow', 'block', 'blockedTerms'] as const)
           element<HTMLInputElement>(key).value = data.settings[key].join(', ');
         element<HTMLTextAreaElement>('facts').value = data.settings.facts.join('\n');
         element<HTMLSelectElement>('mode').value = data.settings.mode;
         element<HTMLInputElement>('reducedMotion').checked = data.settings.reducedMotion;
+        element<HTMLSelectElement>('layout').value = data.settings.layout ?? 'lower';
+        element<HTMLInputElement>('sound').checked = data.settings.sound ?? false;
         populated = true;
       }
-      renderDecisions(data);
+      if (refreshAllow) {
+        element<HTMLInputElement>('allow').value = data.settings.allow.join(', ');
+        refreshAllow = false;
+      }
+      activity.render(data.decisions);
       streamControls.update(data);
     } catch {
       element('connection').textContent = 'Waiting for server';
-      if (!data) element('authState').textContent = 'Run pnpm dev to bring the arena online.';
+      if (!data)
+        element('authState').textContent = 'The arena is offline. Reconnect when it’s ready.';
     }
   }
 
@@ -111,12 +115,11 @@ function dashboard(): void {
 
   function launch(scenario: string): void {
     void run(async () => {
-      const ownPreview = hostId !== 'demo' && scenario === 'normal';
       const result = await api.post<{ status: string; decision?: { verdict: string } }>(
-        ownPreview ? `/api/test/${host}` : '/api/demo',
+        '/api/demo',
         { scenario },
       );
-      if (hostId !== 'demo' && !ownPreview) location.href = '/';
+      if (hostId !== 'demo') location.href = '/';
       else if (result.decision?.verdict === 'BLOCK' && result.status === 'idle')
         toast('Raid blocked. Your arena stays quiet.');
     });
@@ -125,9 +128,15 @@ function dashboard(): void {
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-scenario]'))
     button.addEventListener('click', () => launch(button.dataset.scenario ?? 'normal'));
   element('accept').addEventListener('click', () => {
-    void run(() =>
-      api.post(`/api/approve/${host}`, { decisionId: data?.arena.pending?.decisionId }),
-    );
+    const request = approval.request();
+    if (!request) return;
+    void run(async () => {
+      const result = await api.post<{ accepted: boolean }>(`/api/approve/${host}`, request);
+      if (result.accepted && request.trustNextTime) {
+        refreshAllow = true;
+        toast('Challenge accepted. Your trusted channels have been updated.');
+      }
+    });
   });
   element('decline').addEventListener('click', () => {
     void run(() => api.post(`/api/decline/${host}`));
@@ -156,6 +165,8 @@ function dashboard(): void {
           blockedTerms: list('blockedTerms'),
           mode: element<HTMLSelectElement>('mode').value,
           reducedMotion: element<HTMLInputElement>('reducedMotion').checked,
+          layout: element<HTMLSelectElement>('layout').value,
+          sound: element<HTMLInputElement>('sound').checked,
           facts: element<HTMLTextAreaElement>('facts')
             .value.split('\n')
             .map((fact) => fact.trim())
@@ -169,10 +180,12 @@ function dashboard(): void {
     void run(async () => {
       if (!data) throw new Error('The arena is still connecting. Try again in a moment.');
       await navigator.clipboard.writeText(data.overlayUrl);
+      setup.markCopied(data.overlayUrl);
     }, 'OBS browser source URL copied.');
   };
   element('copyOverlay').addEventListener('click', copy);
   element('setupCopy').addEventListener('click', copy);
+  element('stepCopy').addEventListener('click', copy);
   async function graph(): Promise<void> {
     try {
       map.render(await api.get(`/api/network?host=${host}`));
@@ -188,46 +201,4 @@ function dashboard(): void {
   setInterval(() => {
     void graph();
   }, 5000);
-}
-
-function renderDecisions(data: DashboardView): void {
-  const container = element('decisions');
-  element('decisionCount').textContent = `${data.decisions.length} RECENT DECISIONS`;
-  if (!data.decisions.length) {
-    const empty = document.createElement('p');
-    empty.className = 'empty';
-    empty.textContent = 'Run a test raid to see the gate in action.';
-    container.replaceChildren(empty);
-    return;
-  }
-  const labels: Record<string, string> = {
-    'rumble.start': 'Raid requested',
-    'rumble.start.collab': 'Collab requested',
-    'special.fire': 'Special requested',
-    'ledger.settle': 'Match recorded',
-    'events.subscribe': 'Chat connection',
-    'chat.send': 'Chat announcement',
-    'shoutout.send': 'Community shoutout',
-  };
-  container.replaceChildren(
-    ...data.decisions.slice(0, 15).map((decision) => {
-      const row = document.createElement('div');
-      row.className = 'decision';
-      row.title = decision.decisionId;
-      const tag = document.createElement('span');
-      tag.className = `tag ${decision.verdict.toLowerCase()}`;
-      tag.textContent = decision.verdict;
-      const text = document.createElement('div');
-      const title = document.createElement('strong');
-      title.textContent = labels[decision.action] ?? decision.action;
-      const reason = document.createElement('small');
-      reason.textContent = decision.reasonCodes.join(' · ').replaceAll('_', ' ').toLowerCase();
-      text.append(title, reason);
-      const mode = document.createElement('span');
-      mode.className = 'mode';
-      mode.textContent = decision.mode === 'shadow' ? 'SHADOW' : 'ENFORCED';
-      row.append(tag, text, mode);
-      return row;
-    }),
-  );
 }

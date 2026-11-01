@@ -87,16 +87,22 @@ describe('hosted match holds', () => {
       simulated: true,
     });
     let release!: (value: Decision) => void;
+    let entered!: () => void;
+    const approving = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
     vi.spyOn(room.gate, 'approve').mockImplementation(
       () =>
         new Promise<Decision>((resolve) => {
           release = resolve;
+          entered();
         }),
     );
     const execute = vi
       .spyOn(room.executor, 'execute')
       .mockResolvedValue({ executed: true, value: true });
     const approval = room.approve(decision.decisionId, 'host');
+    await approving;
     now += 10000;
     room.step(10000);
     release({ ...decision, verdict: 'ALLOW', source: 'decionis' });
@@ -127,7 +133,12 @@ describe('hosted match holds', () => {
     });
     now += 1500;
     expect(await room.approve(decision.decisionId, 'host')).toBe(false);
-    expect(room.view().pending).toEqual({ decisionId: decision.decisionId, expiresAt: deadline });
+    expect(room.view().pending).toEqual({
+      decisionId: decision.decisionId,
+      expiresAt: deadline,
+      viewers: 300,
+      raiderLogin: 'stranger',
+    });
     expect(room.view().match).toBeUndefined();
     now = deadline!;
     expect(await room.approve(decision.decisionId, 'host')).toBe(false);

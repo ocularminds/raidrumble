@@ -11,17 +11,18 @@ export class SettingsStore {
       const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
       if (typeof value === 'object' && value !== null) {
         for (const [key, settings] of Object.entries(value))
-          if (validSettings(settings)) this.values.set(key, settings);
+          if (validSettings(settings)) this.values.set(key, normalized(settings));
       }
     } catch {
       /* A new install has no saved preferences. */
     }
   }
   get(hostId: string): DashboardView['settings'] | undefined {
-    return this.values.get(hostId);
+    const value = this.values.get(hostId);
+    return value && structuredClone(value);
   }
   set(hostId: string, value: DashboardView['settings']): void {
-    this.values.set(hostId, structuredClone(value));
+    this.values.set(hostId, normalized(value));
     if (!this.path) return;
     mkdirSync(dirname(this.path), { recursive: true });
     writeFileSync(`${this.path}.tmp`, JSON.stringify(Object.fromEntries(this.values)), {
@@ -44,6 +45,18 @@ export function validSettings(value: unknown): value is DashboardView['settings'
         ),
     ) &&
     (settings.mode === 'shadow' || settings.mode === 'enforce') &&
-    typeof settings.reducedMotion === 'boolean'
+    typeof settings.reducedMotion === 'boolean' &&
+    (settings.layout === undefined ||
+      (typeof settings.layout === 'string' &&
+        ['lower', 'rail', 'full'].includes(settings.layout))) &&
+    (settings.sound === undefined || typeof settings.sound === 'boolean')
   );
+}
+
+function normalized(settings: DashboardView['settings']): DashboardView['settings'] {
+  return {
+    ...structuredClone(settings),
+    layout: settings.layout ?? 'lower',
+    sound: settings.sound ?? false,
+  };
 }

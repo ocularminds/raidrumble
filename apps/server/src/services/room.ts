@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { createContext, type Assignment, type MatchView } from '@raidrumble/engine';
-import { ContentService } from '@raidrumble/content';
 import {
   LocalPolicyGate,
   DecionisGate,
   PolicyExecutor,
+  actionBudget,
+  approvalTimeout,
   type ConfigurablePolicyGate,
   type Decision,
 } from '@raidrumble/policy';
@@ -14,23 +15,34 @@ import { SpecialService } from './specials.js';
 import { HostHistory } from './history.js';
 import { MatchArchive } from './archive.js';
 import { GlowHistory } from './glow.js';
-import type { RaidRequest, RoomChat, RoomOptions } from '../models/room.js';
-import { decisionView } from '../models/decision.js';
+import type {
+  PendingRaid,
+  PreparedMatch,
+  RaidRequest,
+  RoomChat,
+  RoomOptions,
+} from '../models/room.js';
+import { arenaView } from '../models/arena.js';
+import { raidAction, raidLogin } from '../models/room.js';
+import { RoomContent } from './content.js';
+import { HostPreferences } from './preferences.js';
 export type { CompletedMatch, RaidRequest, RoomChat, RoomOptions } from '../models/room.js';
 
 /** One authority, one active match and one host's ephemeral channel state. */
 export class Room {
   readonly gate: ConfigurablePolicyGate;
   readonly executor: PolicyExecutor;
-  private readonly content: ContentService;
+  private readonly content: RoomContent;
   private readonly clock: () => number;
   private readonly history: HostHistory;
   private readonly archive: MatchArchive;
   private readonly glows: GlowHistory;
+  private readonly preferences: HostPreferences;
   private game?: Game;
   private lastMatch?: MatchView;
   private request?: RaidRequest;
-  private pending?: { decision: Decision; request: RaidRequest; expiresAt: number };
+  private pending?: PendingRaid;
+  private incoming?: { request: RaidRequest; expiresAt: number };
   private starting = false;
   private settled = false;
   private startDecision?: Decision;
@@ -44,8 +56,7 @@ export class Room {
   private closed = false;
   private closing?: Promise<void>;
   private special?: SpecialService;
-  private reducedMotion = false;
-  private facts: string[] = [];
+  private hostLabelVersion = 0;
   private rematch?: string;
   speed = 1;
 
@@ -58,10 +69,11 @@ export class Room {
       ...(options.quiet ? { logger: () => undefined } : {}),
     });
     this.executor = new PolicyExecutor(this.gate);
-    this.content = new ContentService(this.gate, options.generator);
+    this.content = new RoomContent(this.gate, options.hostId, options.generator);
     this.history = options.history ?? new HostHistory(options.hostId, undefined, this.clock);
     this.archive = new MatchArchive(this.gate, this.executor, options);
     this.glows = new GlowHistory(this.archive);
+    this.preferences = new HostPreferences(this.gate);
   }
 
   async raid(request: RaidRequest): Promise<Decision> {
@@ -70,8 +82,13 @@ export class Room {
       throw new Error('A match is already active.');
     this.starting = true;
     const epoch = ++this.epoch;
+    const action = request.collab ? 'rumble.start.collab' : 'rumble.start';
+    const config = this.gate.getConfig();
+    const approvalDeadline = this.clock() + approvalTimeout(config, action);
     request = {
       ...request,
+      channels: structuredClone(request.channels),
+      collab: request.collab ? structuredClone(request.collab) : undefined,
       occurredAt: request.occurredAt ?? this.clock(),
       homeMembers:
         request.homeMembers ??
@@ -81,23 +98,18 @@ export class Room {
       roster: request.roster ? new Set(request.roster) : undefined,
       chatterDelta: request.chatterDelta ? new Set(request.chatterDelta) : undefined,
     };
+    this.labels = { ...this.labels, raiderName: 'Raiders' };
+    this.incoming = {
+      request,
+      expiresAt:
+        this.clock() + Math.min(actionBudget(config, action), approvalTimeout(config, action)),
+    };
+    const labels = this.preview(request, epoch);
     try {
-      const decision = await this.gate.authorize({
-        action: request.collab ? 'rumble.start.collab' : 'rumble.start',
-        actor: request.collab
-          ? { kind: 'host', twitchUserId: this.options.hostId }
-          : { kind: 'system' },
-        channel: { hostId: this.options.hostId, raiderId: request.channels.raider.id },
-        payload: request.collab ?? {
-          raiderLogin: request.raiderLogin,
-          raiderAccountAgeDays: request.accountAgeDays,
-          raidViewers: request.viewers,
-          hostFollowsRaider: request.hostFollowsRaider,
-          hasPriorMatch: request.hasPriorMatch ?? false,
-          factsUnavailable: request.accountAgeDays === null || request.hostFollowsRaider === null,
-          raidsLastHour: request.raidsLastHour ?? 1,
-        },
-      });
+      const authorization = this.gate.authorize(raidAction(request, this.options.hostId));
+      const preparation = this.content.stage(request);
+      const decision = await authorization;
+      await labels;
       if (epoch !== this.epoch) return decision;
       this.lastDecision = decision;
       if (
@@ -105,17 +117,41 @@ export class Room {
         (decision.mode === 'enforce' ||
           decision.reasonCodes.some((code) => code === 'POLICY_TIMEOUT' || code === 'POLICY_ERROR'))
       ) {
-        this.pending = { decision, request, expiresAt: this.clock() + 10000 };
-      } else {
-        await this.executor.execute(decision, () => this.begin(request, decision, epoch));
+        const expiresAt = this.gate
+          .listRecords()
+          .find((record) => record.decisionId === decision.decisionId)?.expiresAt;
+        this.pending = {
+          decision,
+          request,
+          expiresAt: Math.min(approvalDeadline, expiresAt ?? approvalDeadline),
+          preparation: preparation.ready,
+        };
+      } else if (decision.verdict === 'ALLOW' || decision.mode === 'shadow') {
+        const prepared =
+          decision.source === 'decionis' && decision.grant
+            ? preparation.current()
+            : await preparation.ready;
+        if (epoch !== this.epoch) return decision;
+        await this.executor.execute(decision, () =>
+          this.begin(
+            request,
+            decision,
+            epoch,
+            Math.min(approvalDeadline, decision.grant?.expiresAt ?? Infinity),
+            prepared,
+          ),
+        );
       }
       return decision;
     } finally {
-      if (epoch === this.epoch) this.starting = false;
+      if (epoch === this.epoch) {
+        this.starting = false;
+        this.incoming = undefined;
+      }
     }
   }
 
-  async approve(decisionId: string, actorId: string): Promise<boolean> {
+  async approve(decisionId: string, actorId: string, trustNextTime = false): Promise<boolean> {
     const pending = this.pending;
     if (
       !pending ||
@@ -127,6 +163,9 @@ export class Room {
     this.starting = true;
     const epoch = this.epoch;
     try {
+      const prepared = await pending.preparation;
+      if (epoch !== this.epoch || this.pending !== pending || this.clock() >= pending.expiresAt)
+        return false;
       const decision = await this.gate.approve(decisionId, actorId);
       if (epoch !== this.epoch || this.pending !== pending || this.clock() >= pending.expiresAt)
         return false;
@@ -137,9 +176,21 @@ export class Room {
       }
       this.pending = undefined;
       const result = await this.executor.execute(decision, () =>
-        this.begin(pending.request, decision, epoch),
+        this.begin(
+          pending.request,
+          decision,
+          epoch,
+          Math.min(pending.expiresAt, decision.grant?.expiresAt ?? Infinity),
+          prepared,
+        ),
       );
-      return result.executed && result.value === true;
+      const accepted =
+        result.executed &&
+        result.value === true &&
+        epoch === this.epoch &&
+        this.startDecision?.decisionId === decision.decisionId;
+      if (accepted && trustNextTime && actorId === this.options.hostId) this.trust(pending.request);
+      return accepted;
     } catch {
       return false;
     } finally {
@@ -148,16 +199,19 @@ export class Room {
   }
 
   decline(): void {
-    if (this.pending) {
+    if (this.pending || this.incoming || this.starting) {
       this.epoch += 1;
       this.starting = false;
     }
     this.pending = undefined;
+    this.incoming = undefined;
   }
 
   reset(): void {
     this.epoch += 1;
     this.starting = false;
+    this.incoming = undefined;
+    if (this.request?.practice === 'realchat') this.glows.clear();
     this.releaseRoster();
     this.pending = undefined;
     this.game = undefined;
@@ -202,7 +256,7 @@ export class Room {
     const epoch = this.epoch;
     let name = this.names.get(message.userId);
     if (!name) {
-      name = await this.content.name(message.displayName ?? 'Viewer', this.options.hostId);
+      name = await this.content.name(message.displayName ?? 'Viewer');
       if (this.game !== game || epoch !== this.epoch) return false;
       this.names.set(message.userId, name);
     }
@@ -223,6 +277,12 @@ export class Room {
   }
   beginStream(streamId: string): void {
     this.history.beginStream(streamId);
+  }
+  async nameHost(value: string): Promise<void> {
+    const version = ++this.hostLabelVersion;
+    const hostName = await this.content.name(value, 'Home Guard');
+    if (!this.closed && version === this.hostLabelVersion)
+      this.labels = { ...this.labels, hostName };
   }
   flush(): Promise<void> {
     return this.archive.flush();
@@ -269,25 +329,11 @@ export class Room {
   }
 
   settings(): DashboardView['settings'] {
-    const config = this.gate.getConfig();
-    return {
-      ...config.lists,
-      mode: config.actions['rumble.start'].mode ?? config.defaults.mode,
-      reducedMotion: this.reducedMotion,
-      facts: [...this.facts],
-    };
+    return this.preferences.read();
   }
 
   configure(settings: DashboardView['settings']): void {
-    this.gate.updateLists({
-      allow: [...settings.allow],
-      block: [...settings.block],
-      blockedTerms: [...settings.blockedTerms],
-    });
-    this.gate.setMode('rumble.start', settings.mode);
-    this.gate.setMode('rumble.start.collab', settings.mode);
-    this.reducedMotion = settings.reducedMotion;
-    this.facts = settings.facts.slice(0, 3).map((fact) => fact.slice(0, 160));
+    this.preferences.configure(settings);
     this.names.clear();
   }
 
@@ -302,69 +348,50 @@ export class Room {
   }
 
   view(): ArenaView {
-    const match = this.game?.view() ?? this.lastMatch;
-    const glow = this.glows.view();
-    const decision =
-      this.lastDecision &&
-      decisionView(
-        this.lastDecision,
-        this.gate.getRequest(this.lastDecision.decisionId)?.action ?? 'rumble.start',
-      );
-    return {
+    return arenaView({
       hostId: this.options.hostId,
-      ...this.labels,
-      connected: true,
-      reducedMotion: this.reducedMotion,
-      simulated: this.request?.simulated ?? this.options.hostId === 'demo',
-      status: this.pending
-        ? 'pending'
-        : !this.game && glow
-          ? 'afterglow'
-          : match
-            ? 'active'
-            : 'idle',
-      match,
-      decision,
+      now: this.clock(),
+      labels: this.labels,
+      settings: this.preferences.read(),
+      request: this.request,
+      pending: this.pending,
+      incoming: this.incoming,
+      decision: this.lastDecision,
+      action: this.lastDecision
+        ? (this.gate.getRequest(this.lastDecision.decisionId)?.action ?? 'rumble.start')
+        : 'rumble.start',
+      match: this.game?.view() ?? this.lastMatch,
+      hasGame: Boolean(this.game),
+      glow: this.glows.view(),
       rematch: this.rematch,
-      ...(this.pending
-        ? {
-            pending: {
-              decisionId: this.pending.decision.decisionId,
-              expiresAt: this.pending.expiresAt,
-            },
-          }
-        : {}),
-      ...(glow ? { afterglow: glow } : {}),
-    };
+    });
   }
 
-  private async begin(request: RaidRequest, decision: Decision, epoch: number): Promise<boolean> {
-    if (this.closed || epoch !== this.epoch) return false;
-    const content = await this.content.create(request.channels);
-    if (this.closed || epoch !== this.epoch) return false;
-    const [hostName, raiderName] = await Promise.all([
-      this.content.name(request.channels.host.name, this.options.hostId, 'Home Guard'),
-      this.content.name(request.channels.raider.name, this.options.hostId, 'Raiders'),
-    ]);
-    let safeNames = new Map<string, string>();
-    if (request.simulated) {
-      const names = await Promise.all(
-        Array.from({ length: 35 }, async (_, index) => {
-          const home = index < 20;
-          const number = home ? index : index - 20;
-          return [
-            `${home ? 'home' : 'raider'}${number}`,
-            await this.content.name(
-              `${home ? 'Guardian' : 'Raider'} ${String(number + 1).padStart(2, '0')}`,
-              this.options.hostId,
-            ),
-          ] as const;
-        }),
-      );
-      safeNames = new Map(names);
-    }
-    if (this.closed || epoch !== this.epoch) return false;
-    this.names = safeNames;
+  private async preview(request: RaidRequest, epoch: number): Promise<void> {
+    const version = ++this.hostLabelVersion;
+    const labels = await this.content.labels(request.channels);
+    if (!this.closed && epoch === this.epoch)
+      this.labels = {
+        ...labels,
+        hostName: version === this.hostLabelVersion ? labels.hostName : this.labels.hostName,
+      };
+  }
+
+  private trust(request: RaidRequest): void {
+    const login = raidLogin(request);
+    if (login && !request.practice) this.preferences.trust(login);
+  }
+
+  private begin(
+    request: RaidRequest,
+    decision: Decision,
+    epoch: number,
+    deadline: number,
+    prepared: PreparedMatch,
+  ): boolean {
+    if (this.closed || epoch !== this.epoch || this.clock() >= deadline) return false;
+    const { content, names } = prepared;
+    this.names = names;
     const matchId = randomUUID();
     this.special = new SpecialService(this.gate, {
       hostId: this.options.hostId,
@@ -372,7 +399,6 @@ export class Room {
       matchId,
       now: () => this.game?.now() ?? 0,
     });
-    this.labels = { hostName, raiderName };
     this.request = request;
     this.lastMatch = undefined;
     this.taggedRaiders.clear();
@@ -382,7 +408,7 @@ export class Room {
     this.game = new Game({
       hostId: this.options.hostId,
       raiderId: request.channels.raider.id,
-      simulated: request.simulated,
+      simulated: request.simulated && request.practice !== 'realchat',
       collab: Boolean(request.collab),
       names: this.names,
       roster: request.roster,
@@ -396,6 +422,7 @@ export class Room {
         teams: { home: request.homeMembers ?? 5, raiders: request.viewers },
       }),
     });
+    this.incoming = undefined;
     return true;
   }
 
@@ -404,15 +431,18 @@ export class Room {
     const view = game.view();
     const request = this.request;
     const startDecision = this.startDecision;
-    const settled = this.archive.settle({
-      matchId: view.matchId,
-      hostId: this.options.hostId,
-      raiderId: request.channels.raider.id,
-      results: view.results,
-      startDecision,
-      atMs: this.clock(),
-      ...this.labels,
-    });
+    const practice = request.practice === 'realchat';
+    const settled = practice
+      ? Promise.resolve(false)
+      : this.archive.settle({
+          matchId: view.matchId,
+          hostId: this.options.hostId,
+          raiderId: request.channels.raider.id,
+          results: view.results,
+          startDecision,
+          atMs: this.clock(),
+          ...this.labels,
+        });
     const seen = new Map<string, number>();
     for (const [id, time] of [...game.raiderLastSeen, ...this.taggedRaiders]) {
       if (game.assignment(id)?.team === 'raiders') seen.set(id, this.matchStartedAt + time);
@@ -427,8 +457,9 @@ export class Room {
       this.matchStartedAt + view.elapsedMs,
       seen,
       new Set(seen.keys()),
-      Boolean(request.simulated),
+      Boolean(request.simulated) && !practice,
       settled,
+      !practice,
     );
     this.releaseRoster();
     this.lastMatch = view;

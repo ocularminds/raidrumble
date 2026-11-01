@@ -65,7 +65,7 @@ describe('shadow mode failure boundary', () => {
       logger: () => undefined,
     });
     const pending = gate.authorize(request());
-    await vi.advanceTimersByTimeAsync(120);
+    await vi.advanceTimersByTimeAsync(1500);
     const decision = await pending;
     const effect = vi.fn();
     expect((await new PolicyExecutor(gate).execute(decision, effect)).executed).toBe(false);

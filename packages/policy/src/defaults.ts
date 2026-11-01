@@ -17,6 +17,7 @@ export function defaultPolicy(): PolicyConfig {
     },
     actions: {
       'rumble.start': {
+        latencyBudgetMs: 1500,
         block: [
           { when: 'raider in lists.block', reason: 'RAIDER_BLOCKLISTED' },
           {
@@ -40,6 +41,7 @@ export function defaultPolicy(): PolicyConfig {
       },
       'rumble.start.collab': {
         ...rule('ESCALATE', 'COLLAB_PARTICIPANT_UNTRUSTED', 'ESCALATE'),
+        latencyBudgetMs: 1500,
         block: [{ when: 'collab.invalidSession', reason: 'COLLAB_INVALID_SESSION' }],
         allow: [{ when: 'collab.allAllowed', reason: 'COLLAB_ALLOWED' }],
       },
@@ -65,7 +67,10 @@ export function defaultPolicy(): PolicyConfig {
           { when: 'special.invalidRedemption', reason: 'REINFORCEMENT_REDEMPTION_INVALID' },
         ],
       },
-      'rewards.configure': rule('ESCALATE', 'REWARD_SETUP_APPROVAL', 'BLOCK'),
+      'rewards.configure': {
+        ...rule('ESCALATE', 'REWARD_SETUP_APPROVAL', 'BLOCK'),
+        latencyBudgetMs: 1500,
+      },
       'shoutout.send': {
         ...rule('ALLOW', 'SHOUTOUT_ALLOWED', 'SKIP'),
         block: [{ when: 'shoutout.rateLimited', reason: 'SHOUTOUT_RATE_LIMIT' }],
@@ -73,6 +78,7 @@ export function defaultPolicy(): PolicyConfig {
       'ledger.settle': rule('ALLOW', 'LEDGER_SETTLEMENT', 'LOCAL'),
       'events.subscribe': {
         ...rule('ALLOW', 'EVENTS_SUBSCRIPTION_ALLOWED', 'BLOCK'),
+        latencyBudgetMs: 1500,
         block: [{ when: 'events.invalidSubscription', reason: 'EVENTS_SUBSCRIPTION_INVALID' }],
       },
     },

@@ -1,5 +1,6 @@
 import type { ArenaView } from '../../server/src/model.js';
 import { Arena } from './arena.js';
+import { Sound } from './sound.js';
 import './style.css';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#arena');
@@ -7,6 +8,10 @@ if (!canvas) throw new Error('Missing arena canvas.');
 const preview = new URLSearchParams(location.search).has('preview');
 document.body.classList.toggle('preview', preview);
 const arena = new Arena(canvas, preview);
+const sound = new Sound();
+document.addEventListener('pointerdown', () => {
+  void sound.unlock();
+});
 const segments = location.pathname.split('/').filter(Boolean);
 const hostId = segments[1] ?? 'demo';
 const server = new URL(import.meta.env.VITE_API_URL ?? 'http://localhost:3000');
@@ -31,6 +36,7 @@ function connect(): void {
       if (typeof next.hostId !== 'string' || typeof next.status !== 'string') return;
       previous = view;
       view = next;
+      sound.update(next);
       receivedAt = performance.now();
       const status = document.querySelector('#status');
       if (status) {
@@ -44,9 +50,11 @@ function connect(): void {
                 ? `${round.instruction} Celebrate in chat with GG.`
                 : round
                   ? `${round.title}. Type ${round.keyword}. ${Math.ceil(round.remainingMs / 1000)} seconds left.`
-                  : next.status === 'pending'
-                    ? 'Waiting for the host to accept the challenge.'
-                    : 'Ready for the next raid.';
+                  : next.status === 'incoming'
+                    ? 'Raid incoming. Checking this challenge.'
+                    : next.status === 'pending'
+                      ? 'Waiting for the host to accept the challenge.'
+                      : 'Ready for the next raid.';
       }
     } catch {
       /* Keep the most recent valid frame while reconnecting. */

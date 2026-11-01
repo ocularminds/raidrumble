@@ -1,0 +1,102 @@
+{
+  "verifiedAt": "2026-10-31T21:59:57.004Z",
+  "scope": "Production Room.raid with real hosted authority; isolated fictional channels, no Twitch effect or persistent ledger.",
+  "setupBudgetMs": 1500,
+  "inMatchBudgetMs": 120,
+  "firstStatus": "incoming",
+  "finalStatus": "active",
+  "matchStarted": true,
+  "elapsedMs": 1594,
+  "decision": {
+    "verdict": "ALLOW",
+    "source": "decionis",
+    "mode": "enforce",
+    "reasonCodes": ["PROTOCOL_OUTCOME_APPROVE", "POLICY_MATCHED", "POLICY_ACTION_AUTO_APPROVE"],
+    "decisionId": "f09ea72f-aa7a-445d-8ba4-088c9231d99b",
+    "dossierId": "ae940576-ae47-419a-a7a6-424a5bdb793f",
+    "hadExecutionGrant": true
+  },
+  "transitions": [
+    {
+      "elapsedMs": 20,
+      "status": "incoming",
+      "matchStarted": false
+    },
+    {
+      "elapsedMs": 1475,
+      "status": "active",
+      "matchStarted": true
+    }
+  ],
+  "calls": [
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 124
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 122
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 121
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 121
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 120
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 120
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 121
+    },
+    {
+      "route": "/v1/authority/grants",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 734
+    },
+    {
+      "route": "/v1/authority/grants/{id}/claims",
+      "method": "POST",
+      "status": 200,
+      "elapsedMs": 717
+    },
+    {
+      "route": "/v1/authority/grants/{id}/receipts",
+      "method": "POST",
+      "aborted": true,
+      "elapsedMs": 121
+    }
+  ],
+  "signatureVerification": {
+    "tool": "@decionis/verify",
+    "version": "0.5.0",
+    "artifactsChecked": 3,
+    "algorithm": "Ed25519",
+    "cryptographicValidity": "verified",
+    "issuerAuthenticity": "DECIONIS_OFFICIAL",
+    "scope": "evaluation and execution binding; dossier alone does not observe the effect"
+  }
+}

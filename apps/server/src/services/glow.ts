@@ -10,6 +10,7 @@ interface GlowEntry {
   nextPulse: number;
   simulated: boolean;
   settled: Promise<boolean>;
+  persistent: boolean;
 }
 
 /** Completed matches retain independent windows even while a newer game is running. */
@@ -24,6 +25,7 @@ export class GlowHistory {
     members: ReadonlySet<string>,
     simulated: boolean,
     settled: Promise<boolean>,
+    persistent = true,
   ): void {
     const clock = { now: endedAtMs };
     const tracker = new AfterglowTracker(endedAtMs, () => clock.now);
@@ -36,6 +38,7 @@ export class GlowHistory {
       members: new Set(members),
       simulated,
       settled,
+      persistent,
       nextPulse: endedAtMs + 2_000,
     });
   }
@@ -54,7 +57,8 @@ export class GlowHistory {
       entry.clock.now = now;
       const view = entry.tracker.view();
       if (view.finished) {
-        this.archive.retention(entry.key, view.finalCount ?? view.count, entry.settled);
+        if (entry.persistent)
+          this.archive.retention(entry.key, view.finalCount ?? view.count, entry.settled);
         entry.members.clear();
         this.entries.delete(matchId);
       }
