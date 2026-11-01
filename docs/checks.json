@@ -1,0 +1,145 @@
+{
+  "scope": "Local automated checks and headless simulations, followed by a separate documentation formatting pass.",
+  "node": "v20.20.0",
+  "sources": {
+    "suite": {
+      "file": "artifacts/finalchecks/20261031T223154617/summary.json",
+      "sha256": "9a9281af445a2f7ece7e1ebb81ca622a1e3840afc9fad6e27b052bf7e77b61a7",
+      "recordedAt": "2026-10-31T22:33:57.827Z"
+    },
+    "format": {
+      "file": "artifacts/evidence/format.json",
+      "sha256": "37d5c40e51d230a89a56e61ea670cb2547523e5fee07bd896736f5b88d5946c4",
+      "recordedAt": "2026-10-31T23:05:45.748Z"
+    }
+  },
+  "tests": {
+    "success": true,
+    "total": 609,
+    "passed": 609,
+    "failed": 0,
+    "pending": 0,
+    "files": 71,
+    "exitCode": 0,
+    "source": "suite"
+  },
+  "lint": {
+    "command": "pnpm lint",
+    "exitCode": 0,
+    "source": "suite"
+  },
+  "typecheck": {
+    "exitCode": 0,
+    "includedIn": "pnpm build",
+    "command": "tsc --noEmit",
+    "source": "suite"
+  },
+  "build": {
+    "command": "pnpm build",
+    "exitCode": 0,
+    "source": "suite"
+  },
+  "format": {
+    "command": "pnpm format:check",
+    "exitCode": 0,
+    "source": "format",
+    "supersedes": {
+      "source": "suite",
+      "exitCode": 1,
+      "pendingDocumentation": ["docs/hosted.json", "docs/verify.md", "improvement.md"],
+      "codeFailures": []
+    }
+  },
+  "simulations": [
+    {
+      "scenario": "normal",
+      "simulated": true,
+      "verdict": "ALLOW",
+      "reasonCodes": ["RAIDER_ALLOWLISTED"],
+      "scriptedHostApproval": false,
+      "durationMs": 180000,
+      "degraded": false,
+      "rounds": [
+        {
+          "round": "siege",
+          "winner": "raiders"
+        },
+        {
+          "round": "know-your-host",
+          "winner": "home"
+        },
+        {
+          "round": "fusion-boss",
+          "winner": "both"
+        }
+      ],
+      "retention": 8,
+      "exitCode": 0,
+      "source": "suite"
+    },
+    {
+      "scenario": "stranger-raid",
+      "simulated": true,
+      "verdict": "ESCALATE",
+      "reasonCodes": ["UNKNOWN_RAIDER"],
+      "scriptedHostApproval": true,
+      "durationMs": 180000,
+      "degraded": false,
+      "rounds": [
+        {
+          "round": "siege",
+          "winner": "raiders"
+        },
+        {
+          "round": "know-your-host",
+          "winner": "home"
+        },
+        {
+          "round": "fusion-boss",
+          "winner": "both"
+        }
+      ],
+      "retention": 8,
+      "exitCode": 0,
+      "source": "suite"
+    },
+    {
+      "scenario": "hate-raid",
+      "simulated": true,
+      "verdict": "BLOCK",
+      "reasonCodes": ["RAIDER_ACCOUNT_TOO_NEW"],
+      "scriptedHostApproval": false,
+      "durationMs": 0,
+      "degraded": false,
+      "rounds": [],
+      "exitCode": 0,
+      "source": "suite"
+    },
+    {
+      "scenario": "collab",
+      "simulated": true,
+      "verdict": "ALLOW",
+      "reasonCodes": ["COLLAB_ALLOWED"],
+      "scriptedHostApproval": false,
+      "durationMs": 180000,
+      "degraded": false,
+      "rounds": [
+        {
+          "round": "siege",
+          "winner": "home"
+        },
+        {
+          "round": "know-your-host",
+          "winner": "home"
+        },
+        {
+          "round": "fusion-boss",
+          "winner": "both"
+        }
+      ],
+      "retention": 8,
+      "exitCode": 0,
+      "source": "suite"
+    }
+  ]
+}

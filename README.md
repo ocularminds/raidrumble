@@ -4,7 +4,11 @@
 
 ![Siege in the Lower Third overlay, local simulation](docs/media/siege.jpg)
 
-[Public source](https://github.com/ocularminds/raidrumble) · [Build evidence](docs/codex.md) · Demo video: publication pending
+[Watch the demo · 2:29](https://youtu.be/quotIlkegbI) · [Devpost project](https://devpost.com/software/raidrumble) · [Public source](https://github.com/ocularminds/raidrumble) · [Build evidence](docs/codex.md)
+
+Published November 1, 2026, with English captions. [Captions](docs/media/video.srt) · [Transcript](docs/media/video.md) · [Contact sheet](docs/media/contact.jpg) · [Video provenance](docs/video.json).
+
+Submitted to the **Codex x TwitchCon Hackathon**. Final source and evidence are tracked in [PR #3](https://github.com/ocularminds/raidrumble/pull/3).
 
 RaidRumble gives newcomers a shared game when they arrive. Raiders **orange ▲** meet Home Guard **blue ●**, compete, learn about each other, then fight one boss. The host chooses which raids enter.
 
@@ -78,7 +82,7 @@ Codex session: `01a1930a-c3f4-7b53-b90a-a523ae252545`.
 
 ![Host setup and policy controls](docs/media/dashboard.jpg)
 
-Real-chat practice uses no automatic players, sends no Twitch messages, and leaves the real rivalry ledger untouched. It was broadcast on **babafesti** with the Lower Third OBS source: one account's real Twitch chat drove two test matches, and the public Twitch player showed a boss defeat and an Afterglow sample of **1**. This was a labeled test raid, with no actual incoming raid or measured retention lift.
+Real-chat practice uses no automatic players, sends no Twitch messages, and leaves the real rivalry ledger untouched. It was broadcast on **babafesti** with the Lower Third OBS source: one account's real Twitch chat drove two test matches, and the public Twitch player showed a boss defeat and an Afterglow sample of **1**. This was a labeled test raid, with no actual incoming raid or measured retention lift. The published edit labels the captured quiz as an authored fallback and identifies local simulations separately.
 
 A separate hosted probe started an isolated fictional match in **1,475 ms** using the production setup allowance. Its signed evaluation and execution binding were verified; the receipt request timed out after the match started. This probe and the Twitch practice broadcast are separate evidence. See [verification](docs/verify.md).
 

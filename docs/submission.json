@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "project": "RaidRumble",
+  "platform": "Devpost",
+  "hackathon": "Codex x TwitchCon Hackathon",
+  "url": "https://devpost.com/software/raidrumble",
+  "status": "submitted",
+  "observedOn": "2026-11-01",
+  "confirmation": "Project submitted! Continue to edit your project until the hackathon deadline: November 02, 2026 at 05:00pm EST.",
+  "submissionId": "1276076",
+  "codexSessionId": "01a1930a-c3f4-7b53-b90a-a523ae252545",
+  "videoUrl": "https://youtu.be/quotIlkegbI",
+  "videoProvenance": "docs/video.json",
+  "sourceUrl": "https://github.com/ocularminds/raidrumble",
+  "releasePullRequest": "https://github.com/ocularminds/raidrumble/pull/3",
+  "evidenceScope": "Observed Devpost confirmation and saved form identifier; this is a publication record, not a signed receipt or a judgment on eligibility."
+}

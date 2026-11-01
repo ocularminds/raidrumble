@@ -1,6 +1,10 @@
 # Demo and build evidence
 
-The submission video is being refreshed with the enhanced overlay, public Twitch practice and genuine user-recorded Codex footage. **Final edit and publication are pending.** No public video URL is recorded yet. The current verification total is **609 tests across 71 files**; [verification](verify.md) records the checks and their limits.
+Watch [RaidRumble — Test raid, real Twitch chat | Built with Codex](https://youtu.be/quotIlkegbI). The final video was published publicly on **November 1, 2026**, with English captions and the approved [Siege thumbnail](media/siege.jpg). It combines the enhanced overlay, public Twitch practice and genuine user-recorded Codex footage. The current verification total is **609 tests across 71 files**; [verification](verify.md) records the checks and their limits.
+
+The uploaded MP4 is **149.333333 seconds**, **1920×1080 at 30 fps**, H.264/AAC, **5,028,385 bytes**. Its SHA-256 is `08e13f8357db47268a24326cbdd1b9d1da62ec0668381e075589c95ff5bc6f67`; this identifies the uploaded file, not YouTube's transcoded copies.
+
+[English SRT](media/video.srt) · [Transcript and evidence scopes](media/video.md) · [Contact sheet](media/contact.jpg) · [Shot provenance and audits](video.json)
 
 ## Confirmed evidence and labels
 
@@ -8,7 +12,7 @@ Account-backed checks confirmed host OAuth, separate bot OAuth, five enabled sub
 
 The hosted Decionis API mapping, signed dossiers and an earlier isolated grant → claim → finalized receipt lifecycle are confirmed; the old “wire unconfirmed” note is historical. A separate production-budget `Room.raid` probe became active at **1,475 ms** with signed evaluation and execution binding. Its receipt request timed out, so that probe does not establish finalization. It used fictional channels with no Twitch effect or ledger write. [Authority evidence](authority.md) gives the exact scope and timing.
 
-The Twitch practice used the local gate, an explicitly fictional opposing community, and no automatic players, Twitch API announcements/shoutouts or real rivalry records. Retain **TEST RAID · REAL TWITCH CHAT** labeling throughout those shots. A captured **Afterglow 1** is a sample of the tagged account's recent chat activity, not a full five-minute retention result or evidence of retention lift. There was no actual incoming raid, second streamer, cross-channel Shared Chat or live Channel Points redemption. The test account is not Affiliate/Partner.
+The Twitch practice used the local gate, an explicitly fictional opposing community, and no automatic players, Twitch API announcements/shoutouts or real rivalry records. The final edit retains **TEST RAID · REAL TWITCH CHAT** labeling throughout those shots and identifies the captured quiz as an authored fallback. A captured **Afterglow 1** is a sample of the tagged account's recent chat activity, not a full five-minute retention result or evidence of retention lift. There was no actual incoming raid, second streamer, cross-channel Shared Chat or live Channel Points redemption. The test account is not Affiliate/Partner.
 
 Reviewed public-player frames in ignored `artifacts/capture/twitchflow/` establish the outcomes:
 
@@ -19,7 +23,7 @@ Reviewed public-player frames in ignored `artifacts/capture/twitchflow/` establi
 | `001320.png` | Second practice victory end card, 22:48:29 UTC      |
 | `001378.png` | Displayed Afterglow sample of 1                     |
 
-The second victory belongs to continuous capture run `1036–1349`; it follows the COMBO input. The OBS source recording `2026-10-31 23-39-51.mov` is 553.533 seconds long. Privacy-safe review images are in `artifacts/twitchreview/`. These raw sources remain local; a final video must identify its selected intervals and any playback-speed changes.
+The second victory belongs to continuous capture run `1036–1349`; it follows the COMBO input. The OBS source recording `2026-10-31 23-39-51.mov` is 553.533 seconds long. Privacy-safe review images are in `artifacts/twitchreview/`. These raw sources remain local; the public [provenance record](video.json) identifies each selected source interval, hash and playback speed.
 
 ## Genuine Codex build evidence
 
@@ -29,9 +33,9 @@ The later user recordings now provide genuine Codex-app footage. Reviewed deriva
 
 - `contract.mp4`: 10 seconds showing `AGENTS.md` and the shared `RoundModule` interface.
 - `working.mp4`: 10 seconds showing the same build chat's **3 working** subagent panel during the enhancement work.
-- `done.mp4`: an optional 2.5-second completion view with pull-request attachments and **3 done**.
+- `done.mp4`: a reviewed 2.5-second completion view with pull-request attachments and **3 done**, omitted from the published edit.
 
-These clips have source hashes, selected intervals, privacy masks and reviewed proof frames in `provenance.json`. They show the contract and later parallel enhancement work; they do **not** depict the original 17:50 round-generation moment. No readable test-total report appeared in the reviewed Codex intervals, so use the separate verification report for the 609-test claim. Do not export unrelated portions of the original screen recordings.
+These clips have source hashes, selected intervals, privacy masks and reviewed proof frames in `provenance.json`. They show the contract and later parallel enhancement work; they do **not** depict the original 17:50 round-generation moment. No readable test-total report appeared in the reviewed Codex intervals. The final edit presents the 609-test result as a separate evidence card, backed by the [verification record](checks.json). Unrelated portions of the original recordings are omitted.
 
 The older build segment remains labeled as a source/log presentation. Automated Codex-window capture was unavailable at that historical checkpoint; no Codex UI footage was fabricated to fill the gap.
 
@@ -56,15 +60,17 @@ python3 tools/video/check.py
 
 The historical recipe needs the captures in `artifacts/capture/`, macOS system fonts, Python with Pillow and FFmpeg. A fresh clone does not include those ignored captures. Current public-facing screenshots belong in `docs/media/`.
 
-## Finish the enhanced edit
+## Finished edit and review
 
-1. Lead with selected public Twitch-player footage that shows real chat driving the labeled practice. Keep the one-account scope clear.
-2. Use separately labeled local simulation for the unfamiliar new-account block, timed approval, explicit trust and close Siege comeback. Current `docs/media/` screenshots show local UI over the original backdrop: Siege/quiz use Lower Third, the boss image uses optional Full Arena, and the dashboard shows local setup.
-3. Include the genuine Codex contract and working-subagent clips. Identify `docs/parallel.json` as historical round-construction evidence rather than footage of that moment.
-4. If using the hosted probe, label its report as recorded evidence from an isolated fictional match. Do not imply that the Twitch broadcast used hosted authority or that the timed-out receipt finalized.
-5. Export under three minutes, review final frames/captions/audio, and record the source interval, scope and playback speed for every segment. Replace “publication pending” only after there is a real accessible video URL.
+The 16-shot edit opens with the public Twitch player and matching OBS source, then intercuts a labeled local comeback with the real-chat quiz, boss defeat and Afterglow. Local policy close-ups show successful acceptance with **Trust next time** already selected, followed by a separate new-account BLOCK. They do not claim to show the checkbox click itself.
 
-`tools/capture/{stage,serve}.py` prepares and serves the original test backdrop. The new `tools/video/cut.py` consumes an explicit local edit plan, labels footage scope and speed, and writes video, captions, transcript, contact sheet and a hash manifest. `tools/video/audit.py` checks the encoded output. With the selected local sources and a reviewed plan available:
+The hosted probe appears as a labeled still summary. Genuine Codex contract and working-subagent clips follow, with separate still summaries of the original round-task records and the 609-test checkpoint. Optional Full Arena and local launch footage close the video. The [transcript](media/video.md) records every caption and its evidence scope.
+
+All selected clips play at **1×**. Public-player and dashboard sequences follow their recorded screenshot timestamps, with gaps above one second cut and no interpolation. OBS excerpts retain original cue audio; Codex excerpts and evidence cards are silent. No narration or music was added.
+
+The recorded review decoded **4,480 frames** and visually inspected **48 first/middle/last frames across all 16 shots**. Format, cue timing, source preservation and audio checks passed, with no detected black frames or clipping. [The audit record](video.json) includes the source-report hashes. These technical checks complement the source review; they do not establish a shot's authenticity by themselves.
+
+`tools/capture/{stage,serve}.py` prepares and serves the original test backdrop. `tools/video/cut.py` consumes an explicit local edit plan, labels footage scope and speed, and writes video, captions, transcript, contact sheet and a hash manifest. `tools/video/audit.py` checks the encoded output. To reproduce an edit from retained local sources and its reviewed plan:
 
 ```sh
 python3 tools/video/cut.py path/to/edit.json --check
@@ -72,6 +78,4 @@ python3 tools/video/cut.py path/to/edit.json --output artifacts/submission
 python3 tools/video/audit.py artifacts/submission.mp4
 ```
 
-The cutter's format checks do not establish a shot's authenticity; the source review and declared scope do. T29/T30 stay open until the public source/media update, final video and Devpost submission are finished.
-
-All rounds, controller labels and test totals shown in a final capture should match that recorded build. [Devpost copy](../devpost.md) must describe the same evidence.
+The public video is finished, and the [Devpost project](https://devpost.com/software/raidrumble) was submitted to the Codex x TwitchCon Hackathon on November 1, 2026. Final source and evidence are tracked in [PR #3](https://github.com/ocularminds/raidrumble/pull/3). [Devpost copy](../devpost.md) describes the same evidence and its limits.

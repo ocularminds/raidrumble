@@ -1,6 +1,6 @@
 # RaidRumble: Devpost submission copy
 
-This copy distinguishes implemented features from recorded evidence. The enhancement checkout passes 609 tests across 71 files. Public Twitch practice and genuine Codex-app clips have been captured; the final video upload, default-branch update and Devpost submission remain pending.
+This copy distinguishes implemented features from recorded evidence. The enhancement checkout passes 609 tests across 71 files. The final video is public with English captions, and the [Devpost project](https://devpost.com/software/raidrumble) is submitted to the Codex x TwitchCon Hackathon. Final source and evidence are tracked in [PR #3](https://github.com/ocularminds/raidrumble/pull/3).
 
 ## Form fields
 
@@ -12,9 +12,13 @@ This copy distinguishes implemented features from recorded evidence. The enhance
 
 **Public repository:** <https://github.com/ocularminds/raidrumble> (default branch: `master`)
 
+**Submitted project:** <https://devpost.com/software/raidrumble>
+
 **Try it:** `pnpm i`, then `pnpm dev`. Open <http://localhost:5174> and click **Launch Test Raid**. No account is required for judge mode.
 
-**Demo video:** Publication pending. No public video URL has been supplied.
+**Demo video:** [RaidRumble — Test raid, real Twitch chat | Built with Codex](https://youtu.be/quotIlkegbI). Public, published November 1, 2026; 2:29 (149.333333 seconds), with English captions.
+
+**Video materials:** [Captions](docs/media/video.srt) · [Transcript](docs/media/video.md) · [Contact sheet](docs/media/contact.jpg) · [Source provenance and audits](docs/video.json).
 
 **Codex session ID:** `01a1930a-c3f4-7b53-b90a-a523ae252545`
 
@@ -79,7 +83,7 @@ _Disclosure:_ Decionis predates RaidRumble and is a service built by the author.
 
 Confirmed checks include host OAuth, separate bot OAuth for the deliberately selected same-account test, five enabled EventSub subscriptions and incoming chat delivery. The public **babafesti** broadcast used an original, labeled backdrop and the real Lower Third OBS browser source. One account's messages entered through Twitch's chat UI drove two **Test Raid · Real Chat** sessions. The first ended in a loss; the second visibly defeated the Fusion Boss. The public Twitch player also showed an Afterglow sample of **1**.
 
-Those sessions demonstrate the product running on Twitch with genuine chat transport. They used a fictional opposing team, no synthetic players, no automatic Twitch writes and no real rivalry-ledger records. The broadcast used the local policy gate. It does not demonstrate a real incoming raid, a second streamer, cross-channel Shared Chat, bot announcements/shoutouts, Channel Points, a full five-minute retention measurement or retention lift.
+Those sessions demonstrate the product running on Twitch with genuine chat transport. They used a fictional opposing team, no synthetic players, no automatic Twitch writes and no real rivalry-ledger records. The broadcast used the local policy gate. The published practice quiz shows an authored fallback, as labeled in its captions. It does not demonstrate a real incoming raid, a second streamer, cross-channel Shared Chat, bot announcements/shoutouts, Channel Points, a full five-minute retention measurement or retention lift.
 
 Automated coverage exercises those integration paths, including Warlord identity, reward configuration, Shared Chat, persistence and Afterglow. Hosted authority was checked separately on isolated fictional matches. The earlier diagnostic lifecycle finalized a receipt and refused replay; the newer production-budget start verified the signed evaluation and binding while its receipt remained unconfirmed after timeout.
 
@@ -100,4 +104,4 @@ Next steps are repeated streamer sessions to measure participation, more plug-in
 
 ## Publication status
 
-The public repository, Codex session ID and current 609-test verification total are ready. Genuine Twitch and Codex-app source clips have been captured and reviewed. The final under-three-minute edit, accessible video URL, default-branch update and Devpost submission are still pending. The older 114-second local cut and its source/log segment remain historical evidence, with their original labels and test counts.
+The [Devpost project](https://devpost.com/software/raidrumble) was submitted on November 1, 2026. Devpost confirmed **Project submitted!** and **SUBMITTED TO Codex x TwitchCon Hackathon**, with build session `01a1930a-c3f4-7b53-b90a-a523ae252545` saved. The reviewed 149.333333-second video is [public on YouTube](https://youtu.be/quotIlkegbI), with the supplied English SRT saved as its caption track and the approved Siege thumbnail. Final source and evidence are tracked in [PR #3](https://github.com/ocularminds/raidrumble/pull/3). The older 114-second local cut and its source/log segment remain historical evidence, with their original labels and test counts.

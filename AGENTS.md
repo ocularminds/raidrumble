@@ -421,10 +421,10 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T26 / E10** Explicit trust-next-time selection tied to a successful host approval
 - [x] **T27 / E11** First-run setup, meaningful names, readable policy activity and compact empty states
 - [x] **T28 / E12** Consistent US copy, feature names, arrows and Warlord feedback
-- [ ] **T29** Current Devpost/README, committed media, accurate evidence and public default branch
-- [ ] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
+- [x] **T29** Current Devpost/README, committed media, accurate evidence and public default branch
+- [x] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
 
-Completed checkboxes describe verified implementation. The enhancement checkout passes 609 tests across 71 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. T29/T30 remain open pending final source/media publication, video upload and Devpost submission.
+Completed checkboxes describe verified implementation and the release bundle delivered through [PR #3](https://github.com/ocularminds/raidrumble/pull/3). The enhancement checkout passes 609 tests across 71 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. The final video and completed Devpost submission are linked in `docs/demo.md`; `docs/submission.json` records the exact build session ID and submission confirmation.
 
 ## 12. Build log (Codex appends a one-line summary here; details go in docs/codex.md)
 
@@ -457,3 +457,5 @@ Completed checkboxes describe verified implementation. The enhancement checkout 
 - 2026-10-31 · T28/E12: Standardized US copy, feature names, action arrows and used-state Warlord feedback.
 - 2026-10-31 · Final enhancement validation: 609 tests across 71 files, lint, strict TypeScript, production builds and four headless scenarios passed; staging regressions closed the short-claim-lease gap without retrying effects.
 - 2026-10-31 · T29/T30 progress: Captured two public babafesti Test Raid Real Chat sessions using one account, with a loss then boss victory and an Afterglow sample of 1; genuine Codex clips show the contract and later parallel enhancement work. Documentation reflects those limits; final video/publication/submission remain open.
+- 2026-11-01 · T29/T30 publication checkpoint: Published the reviewed 149.33-second video with English captions and the Siege thumbnail; added public transcript, contact sheet, provenance and verification records. Devpost story, video and four captioned screenshots are saved; final eligibility/submission and the default-branch merge remain open. The final rerun passes 609 tests across 71 files.
+- 2026-11-01 · T29/T30: Devpost confirmed “Project submitted!” after the user's eligibility and terms confirmations. The submitted entry uses session `01a1930a-c3f4-7b53-b90a-a523ae252545`; the public video, four screenshots, accurate documentation and final release bundle are recorded through PR #3. All twelve enhancements are complete; 609 tests across 71 files and formatting pass.

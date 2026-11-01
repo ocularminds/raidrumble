@@ -1,6 +1,6 @@
 # Verification record
 
-Checks performed on 31 October 2026 with Node 20.20.0. The final automated report was recorded at 22:33:57 UTC; the public Twitch practice captures below were reviewed afterward.
+Checks performed on 31 October 2026 with Node 20.20.0. The final automated report was recorded at 22:33:57 UTC; the public Twitch practice captures below were reviewed afterward. The finished video was published on 1 November 2026.
 
 | Check                                                 | Result                                                                                                          |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -21,8 +21,21 @@ Checks performed on 31 October 2026 with Node 20.20.0. The final automated repor
 | Real chat driving the game                            | One account's Twitch UI messages drove both sessions; public-player captures show a loss, then a boss defeat    |
 | Afterglow on Twitch                                   | A displayed sample of 1 was captured; no full five-minute retention result or lift measured                     |
 | Genuine Codex-app footage                             | User recordings show the RoundModule contract and three working subagents during later enhancement work         |
+| Published video                                       | Public YouTube video, 149.333333 seconds, with saved English captions and the approved Siege thumbnail          |
 
 The 609-test run, lint, TypeScript, builds and all four simulations passed in `artifacts/finalchecks/20261031T223154617/summary.json`. Its original format check found only documentation pending (`docs/hosted.json`, this file and `improvement.md`). The documentation pass formatted those files, then the repository-wide `pnpm format:check` passed; the original report remains unchanged.
+
+## Published video
+
+[RaidRumble — Test raid, real Twitch chat | Built with Codex](https://youtu.be/quotIlkegbI) is public. YouTube Studio confirmed publication on **1 November 2026** and saved the supplied SRT as **English by you**. The approved thumbnail is [siege.jpg](media/siege.jpg).
+
+The uploaded MP4 is **149.333333 seconds**, **1920×1080 at 30 fps**, H.264/AAC, **5,028,385 bytes**, with SHA-256 `08e13f8357db47268a24326cbdd1b9d1da62ec0668381e075589c95ff5bc6f67`. The export review decoded 4,480 frames and inspected 48 sampled frames across all 16 shots. Format, audio, cue timing and source-preservation checks passed. This hash identifies the uploaded file; YouTube transcodes it for playback.
+
+[English captions](media/video.srt) · [Transcript](media/video.md) · [Contact sheet](media/contact.jpg) · [Provenance and audit hashes](video.json)
+
+## Devpost submission
+
+The public [RaidRumble project](https://devpost.com/software/raidrumble) was submitted on **1 November 2026**. The UI confirmed **Project submitted!** and **SUBMITTED TO Codex x TwitchCon Hackathon**. The saved build session is `01a1930a-c3f4-7b53-b90a-a523ae252545`. The [submission record](submission.json) preserves the public receipt details; final source and evidence are tracked in [PR #3](https://github.com/ocularminds/raidrumble/pull/3).
 
 ## Public Twitch practice
 
@@ -30,7 +43,7 @@ The consented public test on **babafesti** broadcast the actual 1920×1080 Lower
 
 The opposing community was fictional. No automatic players were generated, and practice sent no Twitch API announcements or shoutouts and wrote no real rivalry results. The single tagged chat account explains the Afterglow sample; it is neither Twitch's concurrent viewer count nor a full five-minute retention measurement. The broadcast used `POLICY_GATE=local`, and it is separate from the hosted authority probe.
 
-Reviewed public-player frames are retained locally under `artifacts/capture/twitchflow/`: `000310.png` shows the first loss, `001260.png` the second boss defeat, `001320.png` its victory end card, and `001378.png` Afterglow 1. Privacy-safe review derivatives are under `artifacts/twitchreview/`. These source captures are ignored by Git; final video publication remains pending.
+Reviewed public-player frames are retained locally under `artifacts/capture/twitchflow/`: `000310.png` shows the first loss, `001260.png` the second boss defeat, `001320.png` its victory end card, and `001378.png` Afterglow 1. Privacy-safe review derivatives are under `artifacts/twitchreview/`. These source captures are ignored by Git. The [published edit](https://youtu.be/quotIlkegbI) includes selected practice intervals, labels its quiz as an authored fallback, and records the intervals and hashes in [video.json](video.json).
 
 ## Earlier connection checks
 
@@ -52,4 +65,4 @@ User-recorded Codex clips show `AGENTS.md` and the `RoundModule` interface, then
 
 A real incoming raid from a second streamer, Shared Chat across channels, bot announcements/shoutouts, and Channel Points redemptions have not been exercised on a live stream. The current test account cannot exercise Affiliate/Partner-only rewards. No hosted full live-raid flow or measured retention lift is claimed. These paths have automated coverage but remain separate from the confirmed checks above.
 
-Local evidence is ignored by Git: the final-check report directory, earlier `artifacts/integration.txt`, `lint.txt`, `build.txt`, `format.txt`, four `sim*.txt` reports, `twitchbefore.json`, `twitchafter.json`, `twitchchat.png`, `twitchready.png`, and `artifacts/decionis/`. The earlier demo video retains its original recorded test checkpoint and parallel round-build evidence. T29/T30 remain open until the enhanced media, public default-branch update, final video and Devpost submission are complete.
+Local evidence is ignored by Git: the final-check report directory, earlier `artifacts/integration.txt`, `lint.txt`, `build.txt`, `format.txt`, four `sim*.txt` reports, `twitchbefore.json`, `twitchafter.json`, `twitchchat.png`, `twitchready.png`, and `artifacts/decionis/`. The earlier demo video retains its original recorded test checkpoint and parallel round-build evidence. The final video is public, the Devpost project is submitted, and [PR #3](https://github.com/ocularminds/raidrumble/pull/3) tracks the final source and evidence.

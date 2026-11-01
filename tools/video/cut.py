@@ -255,7 +255,7 @@ class Cutter:
         start, end = clip.start + clip.media.start, clip.end + clip.media.start
         video = f"[0:{clip.media.video_index}]trim=start={start:.9f}:end={end:.9f},setpts=(PTS-{start:.9f}/TB)/{clip.speed:.8f},fps=30,"
         video += "scale=trunc(iw*sar/2)*2:ih,setsar=1,scale=1920:936:force_original_aspect_ratio=decrease:force_divisible_by=2,"
-        video += "pad=1920:1080:(ow-iw)/2:(936-ih)/2:color=0x080e14,format=yuv420p[base];[base][1:v]overlay=0:936:shortest=1[v];"
+        video += "pad=1920:1080:(ow-iw)/2:(936-ih)/2:color=0x080e14,setsar=1,format=yuv420p[base];[base][1:v]overlay=0:936:shortest=1[v];"
         if clip.audio_index is not None:
             audio = f"[0:{clip.audio_index}]atrim=start={start:.9f}:end={end:.9f},asetpts=(PTS-{start:.9f}/TB)/{clip.speed:.8f},{tempo(clip.speed)},"
             audio += "aresample=48000:async=1:first_pts=0,aformat=channel_layouts=stereo,apad,"

@@ -130,6 +130,7 @@ class VideoAudit:
             "duration_under_180s": 0 < duration < 180,
             "size_under_100mb": size < 100_000_000,
             "resolution_1080p": (video.get("width"), video.get("height")) == (1920, 1080),
+            "square_pixels": video.get("sample_aspect_ratio") == "1:1",
             "frame_rate_30": abs(fps - 30) < 0.001,
             "h264": video.get("codec_name") == "h264",
             "aac_stereo_48khz": audio.get("codec_name") == "aac" and audio.get("channels") == 2

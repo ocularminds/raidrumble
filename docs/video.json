@@ -1,0 +1,394 @@
+{
+  "version": 1,
+  "title": "RaidRumble — One Raid. Three Rounds. A Reason to Stay.",
+  "preparedAt": "2026-10-31T23:36:38.848349+00:00",
+  "video": {
+    "fileName": "submission.mp4",
+    "durationSeconds": 149.333333,
+    "sha256": "08e13f8357db47268a24326cbdd1b9d1da62ec0668381e075589c95ff5bc6f67",
+    "sizeBytes": 5028385,
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "frameCount": 4480,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioSampleRateHz": 48000,
+    "audioChannels": 2,
+    "squarePixels": true,
+    "faststart": true
+  },
+  "publication": {
+    "url": "https://youtu.be/quotIlkegbI",
+    "visibility": "public",
+    "publishedOn": "2026-11-01",
+    "captionTrack": {
+      "language": "en",
+      "label": "English by you",
+      "file": "docs/media/video.srt"
+    },
+    "uploadedFileSha256": "08e13f8357db47268a24326cbdd1b9d1da62ec0668381e075589c95ff5bc6f67"
+  },
+  "assets": {
+    "captions": {
+      "file": "docs/media/video.srt",
+      "sha256": "b91f0f0188a377b9aacf7b11d67cd218bd1db203bdebabfec09c9c87fd33e07a",
+      "source": "artifacts/submission.srt",
+      "byteIdentical": true
+    },
+    "transcript": {
+      "file": "docs/media/video.md",
+      "sha256": "a84cfff5fe3b607e5b07dcad086d1266e79da66b0ee05c85e4ae3f32a036e05a"
+    },
+    "contact": {
+      "file": "docs/media/contact.jpg",
+      "sha256": "9cf34154b67481793d6b0a7793531cde3b3a116be9f1b123728b985def881120",
+      "sizeBytes": 197693,
+      "width": 1024,
+      "height": 2534,
+      "source": "artifacts/submission.jpg",
+      "sourceSha256": "b4d5e1d1ab2335fd419005dfd97ae410bd35d5304dcbe1514cff5570cfe42829",
+      "transform": "Full contact sheet resized from 1280×3168 with Lanczos; no cropping. Optimized progressive JPEG, quality 45, 4:2:0 chroma subsampling.",
+      "visualReview": "All 16 shots, scope labels and timing labels remain recognizable in the compressed overview; full captions are provided separately."
+    }
+  },
+  "scopeLimits": {
+    "realchat": "One-account Test Raid · Real Twitch Chat on babafesti, shown through the public Twitch player and matching OBS source. No actual incoming raid, cross-channel audience test, synthetic Twitch participants, or measured retention improvement is claimed.",
+    "afterglow": "The observed count of 1 is a recently active tagged raider, not a five-minute retention measurement.",
+    "simulation": "Synthetic gameplay and local enforced-policy demonstrations are explicitly labeled LOCAL SIMULATION.",
+    "codex": "Genuine Codex excerpts show the shared contract and later parallel enhancement work. Original round-generation concurrency is shown separately as timestamped records in a labeled still summary.",
+    "hosted": "Separate isolated production Room.raid probe using fictional channels and the existing hosted policy. The match became active at 1475 ms; signed evaluation and execution binding were verified. Receipt finalization timed out. This is not a real Twitch raid or proof of a finalized receipt or authority-observed effect.",
+    "evidence": "Shots 10, 13 and 14 are explanatory still summaries of recorded facts, not running application or terminal footage."
+  },
+  "editNotes": [
+    "The public Twitch player and matching OBS broadcast show a one-account Test Raid · Real Twitch Chat on babafesti. No actual incoming raid, cross-channel audience, synthetic Twitch participants, or measured audience-retention improvement is claimed.",
+    "Afterglow 1 is the observed recently active tagged-raider count, not a five-minute retention measurement.",
+    "Public-player and dashboard capture clips were reconstructed at their recorded timestamp cadence, repeating captured frames at 30fps without interpolation. Capture gaps over one second were cut; no frame is held across a recording gap. Those clips have silent AAC because their source screenshots have no audio.",
+    "OBS excerpts retain original cue audio at original pacing. Codex source recordings and evidence cards are silent. No added music or narration; every clip plays at 1x.",
+    "Local synthetic gameplay and local enforced-policy demonstrations are labeled LOCAL SIMULATION. The real-chat test does not represent an actual Twitch raid.",
+    "The hosted authority card documents a separate isolated production Room.raid probe with fictional channels: 1475ms start, verified signed evaluation and binding, but receipt finalization timed out. It is not footage of a real Twitch raid.",
+    "The Codex video excerpts show the real current round contract and three enhancement workers. Original round-generation concurrency is documented separately by an explicitly labeled still evidence summary.",
+    "The approval source begins with Trust next time already selected, then captures successful acceptance and the resulting active Siege state. It does not claim to capture the checkbox click itself.",
+    "Original source files are preserved. Source intervals, original SHA256 hashes, privacy masks, and screenshot-to-frame mappings are recorded in twitchreview/provenance.json, localreview/provenance.json, codexreview/provenance.json, and evidence/provenance.json.",
+    "Policy close-ups preserve source time and all relevant evidence: approval uses fixed crop x286,y190,w1112,h650; BLOCK preserves the full dashboard for 1.5 seconds, then hard-cuts to x910,y24,w484,h280 at that same source moment. Exact transformations and original/derived hashes are in localreview/focus.json."
+  ],
+  "audits": {
+    "formatPassed": true,
+    "fullDecodePassed": true,
+    "mediaVerifierPassed": true,
+    "decodedFrames": 4480,
+    "maximumTimestampErrorSeconds": 3.333333467026023e-7,
+    "manualReviewPassed": true,
+    "reviewedAt": "2026-10-31T23:30:14.875599+00:00",
+    "sampledFrames": 48,
+    "sampledShots": 16,
+    "sampling": "Actual first, middle and last frames of all 16 shots; parent independently reviewed the contact sheet and key original proof frames.",
+    "blackFrameDetections": 0,
+    "noAudioClipping": true,
+    "expectedSilentShotsStayedSilent": true,
+    "activeAudioMatched": true,
+    "cueTimingPassed": true,
+    "cueEnvelopeCorrelationRange": [0.9570361346960503, 0.9823691965418361],
+    "preservedSourceFiles": 560,
+    "sourcePreservationPassed": true,
+    "lowMotionReview": "Whole-frame low-motion reports are expected for static evidence cards, quiet Codex/dashboard/end-card UI, and small changing arena regions. Reviewed timer, keyword, meter and state changes remain visible in the real source sequence. No extra frame holds or interpolation were inserted, and screenshot capture gaps above one second were excluded."
+  },
+  "scopeNotice": "Scopes are editor declarations. Format checks do not prove that footage is live or that a claim is true.",
+  "sourceReferenceNotice": "Capture and review paths are repository-relative identifiers under ignored artifacts/. They identify retained evidence by hash; private absolute paths and credentials are omitted.",
+  "references": [
+    {
+      "file": "artifacts/submission.json",
+      "sha256": "5dfd429a6fdb91b945caa473d7d488c798258f76b3cfab30d91ab45873f2bbbc"
+    },
+    {
+      "file": "artifacts/submissionreview/summary.md",
+      "sha256": "d7ca358e92e1d1d57fea74e45b15bbe5b064fabde667cdda273511abb4371cc8"
+    },
+    {
+      "file": "artifacts/submissionreview/quality.json",
+      "sha256": "aa7756c36f03009cc79ac39a0e4029052ee4313c1bae9e5080e99be6ba0387ce"
+    },
+    {
+      "file": "artifacts/submissionreview/format.json",
+      "sha256": "6e760f05ca789c67e0f7d1406a35327777a7f53f5440578392c05c06d81e8b3f"
+    },
+    {
+      "file": "artifacts/submissionreview/skill.json",
+      "sha256": "fe83143d61230c06b02e846f653f17c0375fd3bd4cd0ee0f4ae00f8bf1525f56"
+    },
+    {
+      "file": "artifacts/submissionreview/audio.json",
+      "sha256": "37458555ced81b650c275e9d8d8eafc862fea8f1cf7d1528d95f10feabe01e83"
+    },
+    {
+      "file": "artifacts/submissionreview/timing.json",
+      "sha256": "891cf6f601aa1293913f942fb8972d655ee1195a64fe7b6d8e03a2c292ded429"
+    },
+    {
+      "file": "artifacts/submissionreview/preservation.json",
+      "sha256": "62a6bf90726efd81eb550a9387cda503e125c028290d6fefbb4083042be4693f"
+    },
+    {
+      "file": "artifacts/twitchreview/provenance.json",
+      "sha256": "c7ade0a6c179e19b683a47c3daebb73214379fee4a220acedb059ea4367691a0"
+    },
+    {
+      "file": "artifacts/localreview/provenance.json",
+      "sha256": "5ee7364cafbd55389640d487bdd48a86ec8c0acf75bdc349026b9c1dbb324b3d"
+    },
+    {
+      "file": "artifacts/localreview/focus.json",
+      "sha256": "3078836ade035b5ef17df18298af4ef14761c580c38b802c49d65779b6b05808"
+    },
+    {
+      "file": "artifacts/codexreview/provenance.json",
+      "sha256": "0c62324c78fb7fcec2c113bdf59f7cf26402a32157aeeb5bf24435a4c4588db6"
+    },
+    {
+      "file": "artifacts/evidence/provenance.json",
+      "sha256": "13a055329bcaf89f410373344571ca9d5f3fd38dc48c6452993280399ca18696"
+    }
+  ],
+  "shots": [
+    {
+      "shot": 1,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · Public Twitch player",
+      "caption": "One raid. Three rounds. A reason to stay. A one-account test raid on babafesti, driven by real Twitch chat.",
+      "startSeconds": 0.0,
+      "endSeconds": 13.133333,
+      "outputFrames": 394,
+      "source": "artifacts/twitchreview/siege.mp4",
+      "sourceSha256": "7a468fdc42eefd14640b7295147b496ca1aa21483b9c6d086c269af4771a89d0",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 13.133333,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 2,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · OBS broadcast source",
+      "caption": "Lower Third keeps the upper 70% of the stream visible. Counted moves show names and streaks; sound is opt-in.",
+      "startSeconds": 13.133333,
+      "endSeconds": 23.133333,
+      "outputFrames": 300,
+      "source": "artifacts/twitchreview/obssiege.mp4",
+      "sourceSha256": "7f02e2b48bf230c7ed9406919ddd73727e13e64de8ad6700adc183dd01cbe10c",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 10.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 3,
+      "kind": "video",
+      "scope": "simulation",
+      "label": "LOCAL SIMULATION · Simulated final push",
+      "caption": "Judge mode: 300 simulated Raiders face 20 Home Guard. Participation rates make the final push count.",
+      "startSeconds": 23.133333,
+      "endSeconds": 35.133333,
+      "outputFrames": 360,
+      "source": "artifacts/localreview/comeback.mp4",
+      "sourceSha256": "5741ccbf042a8e444daa72c9eaac897618f0b2e648899c2574d126c048a45ab5",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 12.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 4,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · Know Your Host",
+      "caption": "Know Your Host uses A/B/C answers. This practice shows an authored fallback question.",
+      "startSeconds": 35.133333,
+      "endSeconds": 47.633333,
+      "outputFrames": 375,
+      "source": "artifacts/twitchreview/quiz.mp4",
+      "sourceSha256": "a28b6b8015961660862c3f27eff374b551c2d58ab53d047186607d1bb6029189",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 12.5,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 5,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · Fusion Boss · COMBO",
+      "caption": "Fusion Boss turns opponents into teammates. Hit the shared boss; weak-point keywords deal triple damage.",
+      "startSeconds": 47.633333,
+      "endSeconds": 59.233333,
+      "outputFrames": 348,
+      "source": "artifacts/twitchreview/boss.mp4",
+      "sourceSha256": "cb441b61bf1b4b6e2560ec5c4936209f152c7e674736de02c6ecf829171ebed7",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 11.6,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 6,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · Boss defeated",
+      "caption": "Boss defeated in this one-account real-chat test. The end card invites both communities to follow.",
+      "startSeconds": 59.233333,
+      "endSeconds": 70.833333,
+      "outputFrames": 348,
+      "source": "artifacts/twitchreview/boss.mp4",
+      "sourceSha256": "cb441b61bf1b4b6e2560ec5c4936209f152c7e674736de02c6ecf829171ebed7",
+      "sourceInSeconds": 11.6,
+      "sourceOutSeconds": 23.2,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 7,
+      "kind": "video",
+      "scope": "realchat",
+      "label": "TEST RAID · REAL TWITCH CHAT · Afterglow",
+      "caption": "Afterglow: 1 recently active raider. One-account test.",
+      "startSeconds": 70.833333,
+      "endSeconds": 74.233333,
+      "outputFrames": 102,
+      "source": "artifacts/twitchreview/afterglow.mp4",
+      "sourceSha256": "29ed30fef149a5663e4e2b162848fc268efe92853a87b6cec270e30cda59b5f1",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 3.4,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 8,
+      "kind": "video",
+      "scope": "simulation",
+      "label": "LOCAL SIMULATION · Host approval · cropped",
+      "caption": "An unknown raid waits for the host. Trust next time takes effect only after successful acceptance.",
+      "startSeconds": 74.233333,
+      "endSeconds": 82.433333,
+      "outputFrames": 246,
+      "source": "artifacts/localreview/approvefocus.mp4",
+      "sourceSha256": "6c0902bd49e52e600f0d327c5b625c582c4c1bff4b2e9ee0e9e21dbaf056d00d",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 8.2,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 9,
+      "kind": "video",
+      "scope": "simulation",
+      "label": "LOCAL SIMULATION · Policy activity · close-up",
+      "caption": "Enforced policy blocks an unfamiliar two-day-old account before the rumble starts.",
+      "startSeconds": 82.433333,
+      "endSeconds": 88.333333,
+      "outputFrames": 177,
+      "source": "artifacts/localreview/blockfocus.mp4",
+      "sourceSha256": "66a12cfec3609f4039698531d3a8c2ac69acbff88f9ea3f7837582af304cabb9",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 5.9,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 10,
+      "kind": "still",
+      "scope": "evidence",
+      "label": "RECORDED EVIDENCE · STILL IMAGE · Hosted start probe",
+      "caption": "Separate hosted start: 1,475 ms. Signed evaluation and binding verified; receipt finalization timed out.",
+      "startSeconds": 88.333333,
+      "endSeconds": 98.333333,
+      "outputFrames": 300,
+      "source": "artifacts/evidence/hosted.png",
+      "sourceSha256": "e29761d55f272d3408d86021fc3a337090673c50af7aa9de31e2ab4bae9161a0",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 10.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 11,
+      "kind": "video",
+      "scope": "codex",
+      "label": "CODEX APP CAPTURE · Shared round contract",
+      "caption": "One Codex chat. AGENTS.md defines pure plug-in rounds: start, onInput, tick and result.",
+      "startSeconds": 98.333333,
+      "endSeconds": 108.333333,
+      "outputFrames": 300,
+      "source": "artifacts/codexreview/contract.mp4",
+      "sourceSha256": "9aefae2fa7d61c5696c17c28345eea7f156225065a73ca255adb686e295e014d",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 10.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 12,
+      "kind": "video",
+      "scope": "codex",
+      "label": "CODEX APP CAPTURE · Parallel enhancement work",
+      "caption": "Genuine Codex app capture: three subagents working during the enhancement pass.",
+      "startSeconds": 108.333333,
+      "endSeconds": 118.333333,
+      "outputFrames": 300,
+      "source": "artifacts/codexreview/working.mp4",
+      "sourceSha256": "4d3809d078cfb05ef49aa659395864c2328fe6d92fccc87fae2c1cf8eca50125",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 10.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 13,
+      "kind": "still",
+      "scope": "evidence",
+      "label": "RECORDED EVIDENCE · STILL IMAGE · Original round task records",
+      "caption": "The original three rounds were built concurrently. Timestamped task records document their shared overlap.",
+      "startSeconds": 118.333333,
+      "endSeconds": 126.333333,
+      "outputFrames": 240,
+      "source": "artifacts/evidence/parallel.png",
+      "sourceSha256": "643ed45eb30df176ec1a462572ce54d36cc3165b60e1a9ca5a7448b50b371e1b",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 8.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 14,
+      "kind": "still",
+      "scope": "evidence",
+      "label": "RECORDED EVIDENCE · STILL IMAGE · Test and scenario checkpoint",
+      "caption": "609 tests across 71 files. Attribution, fairness, spam limits, grants and all four scenarios verified.",
+      "startSeconds": 126.333333,
+      "endSeconds": 132.333333,
+      "outputFrames": 180,
+      "source": "artifacts/evidence/tests.png",
+      "sourceSha256": "9e8857391f6773ded7e41c4682e4f329c49cc297143d0958075618e5bfcf4557",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 6.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 15,
+      "kind": "video",
+      "scope": "simulation",
+      "label": "LOCAL SIMULATION · Full Arena",
+      "caption": "Full Arena is optional. Both communities win together, then discover each other through the follow invitations.",
+      "startSeconds": 132.333333,
+      "endSeconds": 142.333333,
+      "outputFrames": 300,
+      "source": "artifacts/localreview/arena.mp4",
+      "sourceSha256": "e132a2101e299400b393d7dccb42b7af31bebb325ef83ab20e34c5ebf1246c6c",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 10.0,
+      "playbackSpeed": 1.0
+    },
+    {
+      "shot": 16,
+      "kind": "video",
+      "scope": "simulation",
+      "label": "LOCAL SIMULATION · Run RaidRumble locally",
+      "caption": "Try it without accounts: pnpm i, then pnpm dev. github.com/ocularminds/raidrumble",
+      "startSeconds": 142.333333,
+      "endSeconds": 149.333333,
+      "outputFrames": 210,
+      "source": "artifacts/localreview/end.mp4",
+      "sourceSha256": "d354611b9d268690e2346de1dd137f870a28a5da1e056bb26e6eedb0d2797e78",
+      "sourceInSeconds": 0.0,
+      "sourceOutSeconds": 7.0,
+      "playbackSpeed": 1.0
+    }
+  ]
+}
