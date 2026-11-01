@@ -1,0 +1,21 @@
+{
+  "repository": "ocularminds/raidrumble",
+  "branch": "master",
+  "appliedAt": "2026-11-01T02:34:57.061Z",
+  "verifiedAt": "2026-11-01T02:36:07.818Z",
+  "method": "PUT /repos/ocularminds/raidrumble/branches/master/protection",
+  "protected": true,
+  "pullRequestsRequired": true,
+  "conversationResolutionRequired": true,
+  "administratorsIncluded": true,
+  "requiredApprovingReviews": 0,
+  "allowForcePushes": false,
+  "allowDeletions": false,
+  "requiredStatusChecks": [],
+  "verification": ["REST protection readback", "GraphQL branch protection readback"],
+  "branchHeadUnchangedByProtection": "5417bf597b8ec2ba5fc8727265a27047439a5fc7",
+  "notes": [
+    "Pull requests are required, with zero required approvals so an individual maintainer can merge.",
+    "No CI contexts were required because inspection found no workflows, check runs or commit statuses."
+  ]
+}

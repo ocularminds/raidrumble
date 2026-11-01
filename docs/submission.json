@@ -13,5 +13,31 @@
   "videoProvenance": "docs/video.json",
   "sourceUrl": "https://github.com/ocularminds/raidrumble",
   "releasePullRequest": "https://github.com/ocularminds/raidrumble/pull/3",
-  "evidenceScope": "Observed Devpost confirmation and saved form identifier; this is a publication record, not a signed receipt or a judgment on eligibility."
+  "evidenceScope": "Observed Devpost confirmation and saved form identifier; this is a publication record, not a signed receipt or a judgment on eligibility.",
+  "tryItUrl": "https://raids.decionis.com",
+  "projectLinks": [
+    {
+      "label": "Try It",
+      "url": "https://raids.decionis.com"
+    },
+    {
+      "label": "YouTube",
+      "url": "https://youtu.be/quotIlkegbI"
+    },
+    {
+      "label": "Repository",
+      "url": "https://github.com/ocularminds/raidrumble"
+    }
+  ],
+  "latestUpdate": {
+    "verifiedAt": "2026-11-01T02:39:47.879Z",
+    "publicProjectLinkCount": 3,
+    "videoUnchanged": true,
+    "repositoryUnchanged": true,
+    "obsoleteDeploymentDisclaimerRemoved": true,
+    "otherDescriptionTextPreserved": true,
+    "submittedDescriptionSha256": "cef96a6285fcc9c6afdea5f7dfe7dfd05d747b7b352300ff155cc519c0d8071a",
+    "status": "submitted",
+    "stepsComplete": "5/5"
+  }
 }
