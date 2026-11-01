@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "origin": "https://raids.decionis.com",
   "region": "centralus",
-  "sourceCommit": "e82f88c71637f6f9946d61267f59a98334cfb874",
-  "image": "decionisacr.azurecr.io/raidrumble@sha256:e87b1dfe8c71b230e996e2d6487649768a0815663f71d27a532ee82b3d7cfb9a",
+  "sourceCommit": "4041221e866c917f21a6b9463d19fec74a4e0f0e",
+  "image": "decionisacr.azurecr.io/raidrumble@sha256:999d537148891f517a5202cfa83d39a26b58739e97e0e96e196344da2eb4d519",
   "imageBuild": {
-    "run": "cj3y",
-    "completedAt": "2026-11-01T00:45:05.419941Z",
+    "run": "cj40",
+    "completedAt": "2026-11-01T02:07:11.599361+00:00",
     "platform": "linux/amd64",
     "status": "Succeeded"
   },
@@ -18,7 +18,11 @@
     "readOnlyRootFilesystem": true,
     "persistentVolumeGiB": 8,
     "persistentMount": "/app/data",
-    "persistenceAcrossPodReplacement": true
+    "persistenceAcrossPodReplacement": true,
+    "podReady": true,
+    "restarts": 0,
+    "environmentFilePresent": false,
+    "policyAdministrationKeyPresent": false
   },
   "dns": {
     "type": "A",
@@ -35,8 +39,8 @@
     "healthStatus": 200
   },
   "verification": {
-    "testsPassed": 654,
-    "testFiles": 78,
+    "testsPassed": 728,
+    "testFiles": 85,
     "testsFailed": 0,
     "buildAndTypecheck": "passed",
     "lint": "passed",
@@ -49,7 +53,14 @@
     "obsWebsocketWithoutOrigin": "accepted",
     "websocketClientWrite": "closed with 1008",
     "foreignWebsocketOrigin": "403",
-    "browserPreview": "completed through Afterglow"
+    "browserPreview": "completed through Afterglow",
+    "publicSmokeAt": "2026-11-01T02:10:32.495Z",
+    "terraformNoDrift": true,
+    "finalRollout": {
+      "added": 0,
+      "updated": 2,
+      "destroyed": 0
+    }
   },
   "limitations": [
     "OAuth sessions, live matches and Warlord links are in memory; reconnect Twitch after a server restart.",
@@ -74,7 +85,46 @@
       "failedBeforeDispatch": 2,
       "committed": 2,
       "sharedScopeDigest": "sha256:ca8dc4a087766f2fcb78431012c84ebd9b5a096b86d0bfa8bfe048b3e963d0d3",
-      "plannedFix": "serialize each channel before authorization"
+      "fix": "serialize each channel before authorization",
+      "verifiedBy": "Five ready EventSub subscriptions, each with a claimed and committed hosted receipt"
+    },
+    "policy": {
+      "name": "raidrumble",
+      "bundleId": "60560d53-c1d1-4343-9e46-d2db525395e3",
+      "version": "raidrumble-v1",
+      "rulesSha256": "179b2d831d921ce4bf53acc9e5a9cb8b29c0b57944f628bfd68fb3d2363e2089"
+    },
+    "liveVerification": {
+      "verifiedAt": "2026-11-01T02:19:20.464Z",
+      "decisions": 5,
+      "signedArtifacts": 15,
+      "claims": 5,
+      "committedReceipts": 5,
+      "verifier": "@decionis/verify 0.5.0",
+      "evidence": "live.json"
     }
+  },
+  "twitch": {
+    "checkedAt": "2026-11-01T02:20:29.441Z",
+    "hostConnected": true,
+    "botConnected": true,
+    "hostEventsConnected": true,
+    "chatEventsConnected": true,
+    "subscriptions": [
+      "channel.chat.message",
+      "channel.raid",
+      "channel.shared_chat.begin",
+      "channel.shared_chat.end",
+      "channel.shared_chat.update"
+    ],
+    "hostLogin": "babafesti",
+    "botLogin": "babafesti",
+    "eventCountBefore": 0,
+    "eventCountAfter": 1,
+    "lastEvent": {
+      "type": "chat",
+      "at": "2026-11-01T02:17:53.090Z"
+    },
+    "verificationScope": "One approved message entered through the Twitch chat UI; no incoming raid from a second streamer"
   }
 }

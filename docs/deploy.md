@@ -43,9 +43,9 @@ The runtime uses `POLICY_GATE=decionis`, `DECIONIS_MODE=ENFORCEMENT`, and the au
 
 ## Twitch and public access
 
-Register **https://raids.decionis.com/auth/twitch/callback** in the existing Twitch application's OAuth redirect list while preserving its development callbacks. `PUBLIC_BASE_URL`, `DASHBOARD_URL` and `OVERLAY_URL` all use the bare HTTPS origin. The callback route is served directly by Fastify. Ingress access logging is disabled so authorization query strings are not recorded.
+The existing Twitch application now includes **https://raids.decionis.com/auth/twitch/callback** in its OAuth redirect list, with development callbacks preserved. `PUBLIC_BASE_URL`, `DASHBOARD_URL` and `OVERLAY_URL` all use the bare HTTPS origin. The callback route is served directly by Fastify. Ingress access logging is disabled so authorization query strings are not recorded.
 
-Connect the host first, then the configured bot from the same browser. A standard account should have four ready host subscriptions and one `channel.chat.message` subscription. Token presence alone does not prove EventSub readiness. Verify the dashboard readiness flags and an authorized incoming chat event before claiming live integration.
+Connect the host first, then the configured bot from the same browser. A standard account should have four ready host subscriptions and one `channel.chat.message` subscription. Token presence alone does not prove EventSub readiness. The final check confirmed both readiness flags, all five subscriptions and one approved incoming chat event at 02:17:53 UTC on 1 November 2026. Five signed, policy-bound setup decisions have committed receipts; see the [live evidence](live.json) and [release record](deploy.json).
 
 Subscription setup queues each channel's full authorization, claim, Twitch write and receipt sequence. The host and bot share this queue; different channels can set up concurrently. Queueing happens before authorization, preserving each action's 1,500 ms allowance. The deployment check found that simultaneous claims for one channel correctly receive `SCOPE_BUSY` from the authority; serialization respects that constraint without changing policy budgets or replaying effects.
 

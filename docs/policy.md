@@ -27,6 +27,12 @@ Each signed snapshot selected the exact bundle UUID, version and rules hash. The
 
 The diagnostic timeout was 5 seconds; measured round trips were 501–637 ms from the development Mac. This validates policy selection and decisions, not production latency or independent Twitch facts. Production retains its 120 ms in-match and 1,500 ms setup budgets. The direct protocol selector mapping is covered by contract-based unit tests; this live verification used the authority endpoint.
 
+## Live Azure evaluation
+
+The deployed app at [raids.decionis.com](https://raids.decionis.com) pins the bundle UUID and version above. Five real `events.subscribe` actions returned hosted enforcement ALLOW decisions, each resolving to the published rules hash. All five grants were claimed and their receipts finalized as **COMMITTED**. The official verifier checked **15 signed artifacts**, including each execution binding; [the read-only receipt check](live.json) records the decision/dossier IDs and its limits.
+
+Twitch independently reported all five expected subscriptions ready, and the approved chat test reached the Azure server at **02:17:53 UTC on 1 November 2026**. This confirms incoming chat delivery. It does not claim a live raid from another streamer or independent Twitch confirmation of every executor receipt.
+
 ## Reproduce publication
 
 Use the separate local `DECIONIS_POLICY_API_KEY` with policy read/write scopes, plus `DECIONIS_ORG_ID`. Keep that administration key out of the Azure app Secret and Terraform.
