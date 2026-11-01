@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "origin": "https://raids.decionis.com",
+  "region": "centralus",
+  "sourceCommit": "e82f88c71637f6f9946d61267f59a98334cfb874",
+  "image": "decionisacr.azurecr.io/raidrumble@sha256:e87b1dfe8c71b230e996e2d6487649768a0815663f71d27a532ee82b3d7cfb9a",
+  "imageBuild": {
+    "run": "cj3y",
+    "completedAt": "2026-11-01T00:45:05.419941Z",
+    "platform": "linux/amd64",
+    "status": "Succeeded"
+  },
+  "runtime": {
+    "node": "22.23.4",
+    "replicas": 1,
+    "strategy": "Recreate",
+    "nonRoot": true,
+    "readOnlyRootFilesystem": true,
+    "persistentVolumeGiB": 8,
+    "persistentMount": "/app/data",
+    "persistenceAcrossPodReplacement": true
+  },
+  "dns": {
+    "type": "A",
+    "address": "52.143.254.111",
+    "ttlSeconds": 300
+  },
+  "tls": {
+    "verifiedAt": "2026-11-01T00:55:36.007644Z",
+    "version": "TLSv1.3",
+    "issuer": "Let's Encrypt YR2",
+    "subjectAltName": "raids.decionis.com",
+    "expiresAt": "2027-01-29T23:50:54Z",
+    "httpRedirectStatus": 308,
+    "healthStatus": 200
+  },
+  "verification": {
+    "testsPassed": 654,
+    "testFiles": 78,
+    "testsFailed": 0,
+    "buildAndTypecheck": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "headlessScenarios": ["normal", "stranger-raid", "hate-raid", "collab"],
+    "productionPagesAndAssets": "passed",
+    "privatePaths": "404",
+    "foreignMutationOrigin": "403",
+    "previewWithoutControlLease": "409",
+    "obsWebsocketWithoutOrigin": "accepted",
+    "websocketClientWrite": "closed with 1008",
+    "foreignWebsocketOrigin": "403",
+    "browserPreview": "completed through Afterglow"
+  },
+  "limitations": [
+    "OAuth sessions, live matches and Warlord links are in memory; reconnect Twitch after a server restart.",
+    "The deployment has one active replica and persistent storage, without a configured off-cluster backup service.",
+    "The first remote native-fetch smoke client timed out on a reused connection after its WebSocket checks. Fresh HTTPS health checks passed. Twenty isolated HTTP/TLS reproductions passed; the original timeout cause remains unlocalized."
+  ],
+  "authority": {
+    "origin": "https://api.decionis.com",
+    "mode": "ENFORCEMENT",
+    "setupBudgetMs": 1500,
+    "egressVerification": {
+      "verifiedAt": "2026-11-01T01:15:59.656Z",
+      "before": "same-ingress public addresses stalled before TCP connection",
+      "fix": "TCP443 to ingress pods selected by both namespace and pod labels",
+      "tlsMs": 43,
+      "unauthenticatedStatus": 401,
+      "responseMs": 51
+    },
+    "subscriptionConcurrencyFinding": {
+      "confirmedBy": "read-only hosted Decision Chain records",
+      "reason": "SCOPE_BUSY",
+      "failedBeforeDispatch": 2,
+      "committed": 2,
+      "sharedScopeDigest": "sha256:ca8dc4a087766f2fcb78431012c84ebd9b5a096b86d0bfa8bfe048b3e963d0d3",
+      "plannedFix": "serialize each channel before authorization"
+    }
+  }
+}

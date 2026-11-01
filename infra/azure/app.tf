@@ -5,17 +5,19 @@ resource "kubernetes_config_map_v1" "runtime" {
     labels    = local.labels
   }
   data = {
-    NODE_ENV          = "production"
-    HOST              = "0.0.0.0"
-    PORT              = "3000"
-    DATA_DIR          = "/app/data"
-    PUBLIC_BASE_URL   = "https://${local.hostname}"
-    DASHBOARD_URL     = "https://${local.hostname}"
-    OVERLAY_URL       = "https://${local.hostname}"
-    TWITCH_AUTH_URL   = "https://${local.hostname}/auth/twitch/callback"
-    POLICY_GATE       = "decionis"
-    DECIONIS_MODE     = "ENFORCEMENT"
-    DECIONIS_API_BASE = "https://api.decionis.com"
+    NODE_ENV                = "production"
+    HOST                    = "0.0.0.0"
+    PORT                    = "3000"
+    DATA_DIR                = "/app/data"
+    PUBLIC_BASE_URL         = "https://${local.hostname}"
+    DASHBOARD_URL           = "https://${local.hostname}"
+    OVERLAY_URL             = "https://${local.hostname}"
+    TWITCH_AUTH_URL         = "https://${local.hostname}/auth/twitch/callback"
+    POLICY_GATE             = "decionis"
+    DECIONIS_MODE           = "ENFORCEMENT"
+    DECIONIS_API_BASE       = "https://api.decionis.com"
+    DECIONIS_POLICY_ID      = var.policy_id
+    DECIONIS_POLICY_VERSION = var.policy_version
   }
 }
 

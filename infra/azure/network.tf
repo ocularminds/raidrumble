@@ -42,6 +42,22 @@ resource "kubernetes_network_policy_v1" "app" {
       }
     }
     egress {
+      # The authority shares this ingress. AKS may apply egress policy after
+      # translating its public load-balancer address to a private ingress pod.
+      to {
+        namespace_selector {
+          match_labels = { "kubernetes.io/metadata.name" = "app-routing-system" }
+        }
+        pod_selector {
+          match_labels = { app = "nginx-decionis-0" }
+        }
+      }
+      ports {
+        protocol = "TCP"
+        port     = "443"
+      }
+    }
+    egress {
       to {
         ip_block {
           cidr = "0.0.0.0/0"

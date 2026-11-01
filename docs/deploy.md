@@ -1,6 +1,6 @@
 # Azure deployment
 
-RaidRumble targets **https://raids.decionis.com** on the existing **Central US** AKS cluster. The deployment follows the SwarmPay Azure target: cluster `decionis-aks`, resource group `decionis-rg`, namespace `decionis`, registry `decionisacr.azurecr.io`, ingress `decionis-nginx`, DNS-01 issuer `letsencrypt-prod`, and storage class `decionis-zrs`.
+RaidRumble is hosted at **https://raids.decionis.com** on the existing **Central US** AKS cluster. The deployment follows the SwarmPay Azure target: cluster `decionis-aks`, resource group `decionis-rg`, namespace `decionis`, registry `decionisacr.azurecr.io`, ingress `decionis-nginx`, DNS-01 issuer `letsencrypt-prod`, and storage class `decionis-zrs`.
 
 Terraform in [`infra/azure`](../infra/azure) manages only RaidRumble's Deployment, Service, ConfigMap, NetworkPolicy, persistent volume claim, Ingress and `raids` DNS record. It does not manage or change the cluster, namespace, registry, shared ingress, issuer or SwarmPay resources. Its separate remote state key is `raidrumble.tfstate` in the existing platform `tfstate` container. The deployment operator's Azure CLI identity retrieves the backend account key through ARM; no key is written into source configuration.
 
@@ -25,17 +25,21 @@ python3 tools/deploy/secret.py
 python3 tools/deploy/secret.py --apply
 terraform -chdir=infra/azure init
 terraform -chdir=infra/azure validate
-terraform -chdir=infra/azure plan -var='image=decionisacr.azurecr.io/raidrumble@sha256:<digest>' -out=../../artifacts/deploy/release.tfplan
+terraform -chdir=infra/azure plan \
+  -var='image=decionisacr.azurecr.io/raidrumble@sha256:<digest>' \
+  -var='policy_id=<published-bundle-uuid>' \
+  -var='policy_version=<published-version>' \
+  -out=../../artifacts/deploy/release.tfplan
 terraform -chdir=infra/azure apply ../../artifacts/deploy/release.tfplan
 kubectl --kubeconfig artifacts/deploy/kubeconfig -n decionis rollout status deployment/raidrumble
 curl --fail https://raids.decionis.com/health
 ```
 
-Replace the commit and digest placeholders with the source revision and ACR result. Review the saved plan before applying it. The image variable accepts only an immutable RaidRumble digest. The Docker build compiles native SQLite on Linux and verifies that it opens a database; developer native modules never enter the image. Both frontend builds use the current HTTPS origin in production, with separate asset prefixes.
+Replace the placeholders with the source revision, ACR digest and published RaidRumble bundle identity/version. Review the saved plan before applying it. The image variable accepts only an immutable RaidRumble digest, and Azure pins an immutable policy bundle UUID. The Docker build compiles native SQLite on Linux and verifies that it opens a database; developer native modules never enter the image. Both frontend builds use the current HTTPS origin in production, with separate asset prefixes.
 
 [`secret.py`](../tools/deploy/secret.py) checks the root `.env` by default and prints key names only. `--apply` sends a narrow allowlist of Twitch application/bot configuration and Decionis runtime credentials through kubectl stdin. Authority policy keys and proxy tenant keys are excluded. Optional OpenAI configuration is included only when both its key and model are provided. Secrets stay out of Terraform, images and Git; Kubernetes stores the runtime Secret separately. Rotate that Secret and perform a planned rollout when credentials change.
 
-The runtime uses the existing enforcement configuration: `POLICY_GATE=decionis`, `DECIONIS_MODE=ENFORCEMENT`, and the authority at `https://api.decionis.com`. The public preview always uses local policy and authored content; it makes no paid generation calls and writes no persistent channel history, settings or match results.
+The runtime uses `POLICY_GATE=decionis`, `DECIONIS_MODE=ENFORCEMENT`, and the authority at `https://api.decionis.com`. The named policy is **raidrumble**, version **raidrumble-v1**, bundle **60560d53-c1d1-4343-9e46-d2db525395e3**. `DECIONIS_POLICY_ID` pins that UUID and `DECIONIS_POLICY_VERSION` pins its version. These selectors enter the canonical authority intent before hashing, so the grant is bound to the requested policy. Policy publication uses a separate local administration key; that key never enters the app Secret. The public preview always uses local policy and authored content; it makes no paid generation calls and writes no persistent channel history, settings or match results.
 
 ## Twitch and public access
 
@@ -43,11 +47,17 @@ Register **https://raids.decionis.com/auth/twitch/callback** in the existing Twi
 
 Connect the host first, then the configured bot from the same browser. A standard account should have four ready host subscriptions and one `channel.chat.message` subscription. Token presence alone does not prove EventSub readiness. Verify the dashboard readiness flags and an authorized incoming chat event before claiming live integration.
 
+Subscription setup queues each channel's full authorization, claim, Twitch write and receipt sequence. The host and bot share this queue; different channels can set up concurrently. Queueing happens before authorization, preserving each action's 1,500 ms allowance. The deployment check found that simultaneous claims for one channel correctly receive `SCOPE_BUSY` from the authority; serialization respects that constraint without changing policy budgets or replaying effects.
+
 The anonymous **Launch Test Raid** control reserves a shared, authored preview for one browser using a four-minute secure cookie. Other visitors can watch. Only its current controller can reset or accept the preview; shared settings and saved trust stay fixed. HTTP, OAuth admission and read-only WebSocket connections are bounded. OBS connections may omit an Origin header; browser mutations must originate at the hosted site.
 
-The NetworkPolicy admits application traffic only from the established ingress pods and allows outbound DNS and public HTTPS. The server trusts that one ingress hop. Service and liveness/readiness probes use port 3000; the public ingress redirects HTTP to HTTPS and supports persistent WebSocket connections.
+The NetworkPolicy admits application traffic only from the established ingress pods. Outbound traffic permits DNS, public HTTPS and HTTPS to those same ingress pods, selected by both namespace and pod labels. The last rule is necessary because `api.decionis.com` shares the ingress: AKS translates its public load-balancer address to private ingress endpoints before egress policy applies. Without that peer, Twitch OAuth worked but authority connections timed out before TCP/TLS, correctly blocking event subscription setup. Private-network and metadata exclusions remain in place for other destinations.
+
+The server trusts that one ingress hop. Service and liveness/readiness probes use port 3000; the public ingress redirects HTTP to HTTPS and supports persistent WebSocket connections.
 
 ## Recovery
+
+The [release record](deploy.json) identifies the Linux image, runtime, certificate and deployment checks. Its source commit identifies the application image, which may precede the final documentation commit.
 
 The persistent claim has Terraform `prevent_destroy`. Keep the claim when replacing the app. For rollback, plan and apply a previously verified image digest; then reconnect host and bot because a rollout ends in-memory sessions and matches. Schedule rollouts between streams.
 

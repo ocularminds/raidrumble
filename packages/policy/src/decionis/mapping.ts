@@ -8,6 +8,8 @@ import type {
   WireContext,
 } from './models.js';
 import { canonical, codes, hash, record, text, timestamp, uuid } from './shape.js';
+import { PolicySelector, type PolicySelection } from './selection.js';
+import type { RuntimeAssertion } from './assertion.js';
 
 const outcomes: Record<string, Verdict> = {
   APPROVE: 'ALLOW',
@@ -38,6 +40,8 @@ export class DecionisMapping {
     id: string,
     nowMs: number,
     deadline: number,
+    policy: PolicySelection = {},
+    assertion?: RuntimeAssertion,
   ): CapturedIntent {
     if (deadline <= nowMs || deadline > nowMs + 300_000) throw new Error('POLICY_ERROR');
     const binding: IntentBinding = {
@@ -51,12 +55,16 @@ export class DecionisMapping {
         type: req.action,
         resource: `twitch:channel:${req.channel.hostId}`,
         parameters: {
+          ...new PolicySelector(policy).parameters(),
           channel: req.channel,
           payload: req.payload,
           ...(req.matchId === undefined ? {} : { matchId: req.matchId }),
         },
       },
-      context: { idempotency_key: id },
+      context: {
+        idempotency_key: id,
+        ...(assertion ? { raidrumble: structuredClone(assertion) } : {}),
+      },
       downstream_target: {
         system: ['chat.send', 'shoutout.send', 'events.subscribe', 'rewards.configure'].includes(
           req.action,
@@ -72,8 +80,9 @@ export class DecionisMapping {
     };
   }
 
-  static protocol(data: unknown): Decision {
+  static protocol(data: unknown, policy: PolicySelection = {}): Decision {
     const body = record(data);
+    new PolicySelector(policy).verify(body, true);
     const outcome = text(body.outcome);
     const verdict = Object.hasOwn(outcomes, outcome) ? outcomes[outcome] : undefined;
     if (
@@ -100,6 +109,7 @@ export class DecionisMapping {
 
   static authority(data: unknown, ctx: WireContext): HostedDecision {
     const body = record(data);
+    PolicySelector.captured(ctx.captured.binding.action.parameters).verify(body);
     const status = text(body.status);
     const verdict = Object.hasOwn(statuses, status) ? statuses[status] : undefined;
     if (

@@ -27,3 +27,4 @@ export { LocalPolicyGate } from './local.js';
 export { PolicyExecutor } from './executor.js';
 export { DecionisGate } from './decionis/gate.js';
 export type { DecionisOptions } from './decionis/gate.js';
+export type { PolicySelection } from './decionis/selection.js';

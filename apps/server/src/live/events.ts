@@ -10,6 +10,7 @@ import {
 import type { LiveAccount, LiveClient, LiveOptions, LiveProfile, LiveStatus } from './model.js';
 import { enrichRaid } from './profile.js';
 import { SharedChannels } from './shared.js';
+import { ChannelQueue } from './queue.js';
 
 interface HostReadiness {
   required: Set<string>;
@@ -37,6 +38,7 @@ export class LiveEvents {
   private issueSequence = 0;
   private validationTimer?: ReturnType<typeof setInterval>;
   private readonly shared: SharedChannels;
+  private readonly setup = new ChannelQueue();
 
   constructor(
     private readonly options: LiveOptions,
@@ -53,9 +55,16 @@ export class LiveEvents {
     this.hostReadiness.delete(hostId);
     this.received.delete(hostId);
     this.shared.clear(hostId);
+    let activeSession: string | undefined;
     const client = this.create({
       onSession: async (sessionId, { reconnected }) => {
-        if (this.hosts.get(hostId) !== account || account.revoked || reconnected) return;
+        if (this.hosts.get(hostId) !== account || account.revoked) return;
+        activeSession = sessionId;
+        if (reconnected) {
+          if (!this.status(hostId).hostEventsConnected)
+            this.report(hostId, 'Twitch setup changed during reconnect. Reconnect this channel.');
+          return;
+        }
         const subscribed = new Set<string>();
         const plan = SubscriptionPlan.host(sessionId, hostId, this.options.botUserId ?? hostId, {
           rewards: account.profile.affiliate,
@@ -69,6 +78,8 @@ export class LiveEvents {
         const current = () =>
           this.hosts.get(hostId) === account &&
           !account.revoked &&
+          activeSession === sessionId &&
+          (client.status === undefined || client.status === 'connected') &&
           this.hostReadiness.get(hostId) === readiness;
         await Promise.all(
           plan.map(async (write) => {
@@ -110,10 +121,14 @@ export class LiveEvents {
         if (this.bot !== account || account.revoked) return;
         this.botSession = sessionId;
         this.issues.delete('bot');
-        if (reconnected) return;
+        const channels = new Set([...this.hosts.keys(), ...this.raiders.keys()]);
+        if (reconnected) {
+          if ([...channels].some((id) => !this.botConfirmed.has(id)))
+            this.report('', 'Twitch chat setup changed during reconnect. Reconnect the bot.');
+          return;
+        }
         this.botSubscribed = new Set();
         this.botConfirmed = new Set();
-        const channels = new Set([...this.hosts.keys(), ...this.raiders.keys()]);
         await Promise.all([...channels].map((channelId) => this.subscribeChat(channelId)));
       },
       onNotification: (event) =>
@@ -239,7 +254,8 @@ export class LiveEvents {
     const account = this.hosts.get(channelId) ?? this.raiders.get(channelId);
     const bot = this.bot;
     if (!account || account.revoked || !bot || bot.revoked || !this.botSession) return;
-    const write = SubscriptionPlan.subscription(this.botSession, 'channel.chat.message', {
+    const sessionId = this.botSession;
+    const write = SubscriptionPlan.subscription(sessionId, 'channel.chat.message', {
       broadcaster_user_id: channelId,
       user_id: bot.identity.userId,
     });
@@ -248,6 +264,8 @@ export class LiveEvents {
       this.bot === bot &&
       !bot.revoked &&
       !account.revoked &&
+      this.botSession === sessionId &&
+      (this.botClient?.status === undefined || this.botClient.status === 'connected') &&
       this.botConfirmed === confirmed &&
       (this.hosts.get(channelId) ?? this.raiders.get(channelId)) === account;
     if (await this.subscribe(channelId, bot, write, this.botSubscribed, current)) {
@@ -263,44 +281,60 @@ export class LiveEvents {
     subscribed: Set<string>,
     current: () => boolean,
   ): Promise<boolean> {
-    const key = `${channelId}:${String(write.body?.type)}`;
-    if (!current() || subscribed.has(key)) return false;
-    subscribed.add(key);
-    const scope = write.body?.type === 'channel.chat.message' ? 'chat' : 'host';
-    try {
-      const gate = this.options.getGate(channelId);
-      const decision = await gate.authorize({
-        action: 'events.subscribe',
-        actor: {
-          kind: account.identity.userId === this.options.botUserId ? 'system' : 'host',
-          twitchUserId: account.identity.userId,
-        },
-        channel: { hostId: channelId },
-        payload: { subscription: write.body, botUserId: this.options.botUserId },
-      });
-      if (!current()) return false;
-      const result = await new PolicyExecutor(gate).executeHelix(decision, write, {
-        clientId: this.options.clientId ?? '',
-        accessToken: await account.tokens.accessToken(),
-        ...(this.options.fetch ? { fetch: this.options.fetch } : {}),
-      });
-      if (!current()) return false;
-      if (!result.executed || !this.enabled(result.value, write)) {
-        subscribed.delete(key);
-        this.report(
-          channelId,
-          'A Twitch event subscription could not be enabled. Check authorization and policy.',
-          scope,
+    return this.setup.run(channelId, async () => {
+      const key = `${channelId}:${String(write.body?.type)}`;
+      if (!current() || subscribed.has(key)) return false;
+      subscribed.add(key);
+      const scope = write.body?.type === 'channel.chat.message' ? 'chat' : 'host';
+      try {
+        const gate = this.options.getGate(channelId);
+        const decision = await gate.authorize({
+          action: 'events.subscribe',
+          actor: {
+            kind: account.identity.userId === this.options.botUserId ? 'system' : 'host',
+            twitchUserId: account.identity.userId,
+          },
+          channel: { hostId: channelId },
+          payload: { subscription: write.body, botUserId: this.options.botUserId },
+        });
+        if (!current()) {
+          subscribed.delete(key);
+          return false;
+        }
+        const accessToken = await account.tokens.accessToken();
+        if (!current()) {
+          subscribed.delete(key);
+          return false;
+        }
+        const result = await new PolicyExecutor(gate).executeHelix(
+          decision,
+          write,
+          {
+            clientId: this.options.clientId ?? '',
+            accessToken,
+            ...(this.options.fetch ? { fetch: this.options.fetch } : {}),
+          },
+          current,
         );
+        // An uncertain POST may have reached Twitch; keep it deduplicated for this session.
+        if (!result.executed && result.reason !== 'EFFECT_FAILED') subscribed.delete(key);
+        if (!current()) return false;
+        if (!result.executed || !this.enabled(result.value, write)) {
+          this.report(
+            channelId,
+            'A Twitch event subscription could not be enabled. Check authorization and policy.',
+            scope,
+          );
+          return false;
+        }
+        return true;
+      } catch {
+        subscribed.delete(key);
+        if (current())
+          this.report(channelId, 'Twitch event setup failed. Reconnect this channel.', scope);
         return false;
       }
-      return true;
-    } catch {
-      subscribed.delete(key);
-      if (current())
-        this.report(channelId, 'Twitch event setup failed. Reconnect this channel.', scope);
-      return false;
-    }
+    });
   }
 
   private async hostEvent(

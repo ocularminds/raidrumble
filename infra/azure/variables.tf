@@ -28,6 +28,24 @@ variable "ingress_ipv4" {
   }
 }
 
+variable "policy_id" {
+  type        = string
+  description = "Immutable RaidRumble policy bundle UUID returned by the Decionis publication API."
+  validation {
+    condition     = can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.policy_id))
+    error_message = "Pin the published RaidRumble bundle UUID for this Azure release."
+  }
+}
+
+variable "policy_version" {
+  type        = string
+  description = "Version returned with the published RaidRumble policy bundle."
+  validation {
+    condition     = length(trimspace(var.policy_version)) > 0 && length(var.policy_version) <= 100
+    error_message = "Provide the published policy version."
+  }
+}
+
 locals {
   name      = "raidrumble"
   namespace = "decionis"

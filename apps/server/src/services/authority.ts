@@ -12,6 +12,10 @@ export function authorityConfig(env: Record<string, string | undefined>): Author
   const mode = (env.DECIONIS_MODE ?? 'SHADOW').trim().toUpperCase();
   if (!['SHADOW', 'ENFORCE', 'ENFORCEMENT', 'LIVE'].includes(mode))
     throw new Error('DECIONIS_MODE must be SHADOW or ENFORCEMENT.');
+  const policyId = env.DECIONIS_POLICY_ID?.trim();
+  const policyVersion = env.DECIONIS_POLICY_VERSION?.trim();
+  if (policyVersion && !policyId)
+    throw new Error('DECIONIS_POLICY_ID is required when DECIONIS_POLICY_VERSION is set.');
   return {
     gateKind: 'decionis',
     initialMode: mode === 'SHADOW' ? 'shadow' : 'enforce',
@@ -20,6 +24,8 @@ export function authorityConfig(env: Record<string, string | undefined>): Author
       apiKey: env.DECIONIS_API_KEY,
       enforceApiKey: env.DECIONIS_ENFORCE_API_KEY,
       orgId: env.DECIONIS_ORG_ID,
+      ...(policyId ? { policyId } : {}),
+      ...(policyVersion ? { policyVersion } : {}),
     },
   };
 }
