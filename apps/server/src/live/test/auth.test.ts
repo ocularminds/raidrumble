@@ -44,6 +44,42 @@ describe('Live Twitch authentication', () => {
     await f.app.close();
   });
 
+  it('refreshes the HTTPS cookie only after successful authentication', async () => {
+    const f = fixture({ baseUrl: 'https://arena.example', dashboardUrl: 'https://arena.example' });
+    const flow = await begin(f, 'host');
+    expect(flow.response.headers['set-cookie']).toContain('Max-Age=600; Secure');
+    f.setNow(1_798_000_000_000 + 9 * 60_000);
+    const success = await f.app.inject({
+      url: `/auth/callback?state=${flow.state}&code=10:host`,
+      headers: { cookie: flow.cookie },
+    });
+    expect(success.statusCode).toBe(302);
+    expect(success.headers['set-cookie']).toBe(
+      `${flow.cookie}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200; Secure`,
+    );
+    expect(success.headers.location).toBe('https://arena.example/?host=10');
+    await f.app.close();
+  });
+
+  it('does not extend an empty browser session when OAuth is restarted near expiry', async () => {
+    const f = fixture();
+    const original = await begin(f, 'host');
+    f.setNow(1_798_000_000_000 + 590_000);
+    const retry = await begin(f, 'host', original.cookie);
+    expect(retry.response.statusCode).toBe(302);
+    expect(retry.response.headers['set-cookie']).toBeUndefined();
+    f.setNow(1_798_000_000_000 + 600_000);
+    const expired = await f.app.inject({
+      url: `/auth/callback?state=${retry.state}&code=10:host`,
+      headers: { cookie: original.cookie },
+    });
+    expect(expired.statusCode).toBe(400);
+    expect(expired.headers['set-cookie']).toBeUndefined();
+    expect(f.fetcher).not.toHaveBeenCalled();
+    expect(f.service.status('10').hostConnected).toBe(false);
+    await f.app.close();
+  });
+
   it('connects a host before a bot is configured and refuses an unbound bot login', async () => {
     const f = fixture({ botUserId: undefined });
     const host = await login(f, 'host', '10');
@@ -140,6 +176,7 @@ describe('Live Twitch authentication', () => {
       headers: { cookie: flow.cookie },
     });
     expect(response.statusCode).toBe(502);
+    expect(response.headers['set-cookie']).toBeUndefined();
     expect(response.body).not.toContain('credential-secret');
     expect(response.headers['cache-control']).toBe('no-store');
     await f.app.close();

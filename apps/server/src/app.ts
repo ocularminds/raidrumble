@@ -19,6 +19,9 @@ import { registerDemo } from './routes/demo.js';
 import { registerStream } from './routes/stream.js';
 import { StreamActions } from './services/stream.js';
 import { authorityConfig } from './services/authority.js';
+import { ProductionAccess } from './services/access.js';
+import { SocketPool } from './services/socket.js';
+import { registerStatic } from './static.js';
 
 export interface AppOptions {
   ledgerPath?: string;
@@ -30,11 +33,17 @@ export interface AppOptions {
 }
 
 export async function createApp(options: AppOptions = {}) {
+  const production = process.env.NODE_ENV === 'production';
+  const baseUrl = process.env.PUBLIC_BASE_URL ?? 'http://localhost:3000';
+  const pool = production ? new SocketPool({ origin: baseUrl }) : undefined;
   const app = Fastify({
     logger: !options.quiet,
+    // The hosted NetworkPolicy admits only the configured ingress controller.
+    trustProxy: production ? (_address: string, hop: number) => hop === 0 : false,
     bodyLimit: 16384,
     logController: new LogController({ disableRequestLogging: true }),
   });
+  if (production) new ProductionAccess({ origin: baseUrl }).register(app);
   const ledger = new Ledger(options.ledgerPath ?? ':memory:');
   const policy = await loadPolicy(
     fileURLToPath(new URL('../../../policy/raidrumble.policy.yaml', import.meta.url)),
@@ -49,6 +58,7 @@ export async function createApp(options: AppOptions = {}) {
     config: policy,
     gateKind,
     decionis,
+    ephemeralDemo: production,
     quiet: options.quiet,
     now: options.now,
     generator:
@@ -56,9 +66,9 @@ export async function createApp(options: AppOptions = {}) {
         ? new OpenAiContent(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL)
         : undefined,
   });
-  const baseUrl = process.env.PUBLIC_BASE_URL ?? 'http://localhost:3000';
-  const dashboardUrl = process.env.DASHBOARD_URL ?? 'http://localhost:5174';
-  const overlayBase = process.env.OVERLAY_URL ?? 'http://localhost:5173';
+  const dashboardUrl =
+    process.env.DASHBOARD_URL ?? (production ? baseUrl : 'http://localhost:5174');
+  const overlayBase = process.env.OVERLAY_URL ?? (production ? baseUrl : 'http://localhost:5173');
   const origins = new Set([baseUrl, dashboardUrl, overlayBase].map((url) => new URL(url).origin));
   await app.register(cors, { origin: [...origins], credentials: true });
   app.addHook('onRequest', async (request, reply) => {
@@ -152,18 +162,20 @@ export async function createApp(options: AppOptions = {}) {
   const actions = new StreamActions(rooms, live);
   registerStream(app, { rooms, live, actions });
   app.get('/health', async () => ({ status: 'ok', service: 'RaidRumble', policy: gateKind }));
-  await app.register(websocket);
+  await app.register(websocket, pool?.websocketOptions ?? {});
   const clients = new Map<WebSocket, () => unknown>();
   app.get<{ Params: { hostId: string } }>('/ws/:hostId', { websocket: true }, (socket, request) => {
+    if (pool && !pool.attach(socket, request)) return;
     const hostId = request.params.hostId;
     if (!rooms.all.has(hostId)) {
       socket.close(1008, 'Unknown channel');
+      if (pool) socket.terminate();
       return;
     }
     // Re-resolve so an existing OBS connection follows entry/exit from isolated practice.
     const read = () => rooms.get(hostId).view();
     clients.set(socket, read);
-    socket.send(JSON.stringify(read()));
+    if (!pool || pool.canSend(socket)) socket.send(JSON.stringify(read()));
     socket.on('close', () => clients.delete(socket));
     socket.on('error', () => clients.delete(socket));
   });
@@ -171,19 +183,22 @@ export async function createApp(options: AppOptions = {}) {
     '/ws/mirror/:matchId',
     { websocket: true },
     (socket, request) => {
+      if (pool && !pool.attach(socket, request)) return;
       const room = rooms.active().find((room) => room.matchId === request.params.matchId);
       if (!room) {
         socket.close(1008, 'Unknown match');
+        if (pool) socket.terminate();
         return;
       }
       const read = () =>
         room.matchId === request.params.matchId ? room.view() : { hostId: 'ended', status: 'idle' };
       clients.set(socket, read);
-      socket.send(JSON.stringify(read()));
+      if (!pool || pool.canSend(socket)) socket.send(JSON.stringify(read()));
       socket.on('close', () => clients.delete(socket));
       socket.on('error', () => clients.delete(socket));
     },
   );
+  await registerStatic(app);
   let previous = performance.now();
   const timer =
     options.autoTick === false
@@ -196,16 +211,22 @@ export async function createApp(options: AppOptions = {}) {
           void actions.step().catch(() => undefined);
           for (const [client, read] of clients) {
             try {
+              if (pool && !pool.canSend(client)) {
+                clients.delete(client);
+                continue;
+              }
               if (client.readyState === 1 && client.bufferedAmount < 262144)
                 client.send(JSON.stringify(read()));
             } catch {
               clients.delete(client);
+              client.terminate();
             }
           }
         }, 100);
   app.addHook('onClose', async () => {
     clearInterval(timer);
     await live.stop();
+    pool?.close();
     for (const client of clients.keys()) client.close();
     try {
       await rooms.close();

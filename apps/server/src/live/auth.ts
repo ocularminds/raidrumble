@@ -95,7 +95,7 @@ export class LiveAuth {
       if (!oauthScopes[context.role].every((scope) => identity.scopes.includes(scope)))
         return reply.code(403).send({ error: 'Twitch did not grant the required permissions.' });
       await this.accept(context.role, { tokens: { ...tokens, scopes: identity.scopes }, identity });
-      this.sessions.setIdentity(browser.id, context.role, identity);
+      this.sessions.setIdentity(browser.id, context.role, identity, reply);
       if (flow.warlordToken) return reply.redirect(this.links.url(flow.warlordToken));
       const destination = new URL('/', this.options.dashboardUrl);
       const hostId = context.role === 'host' ? identity.userId : flow.hostId;

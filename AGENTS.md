@@ -325,6 +325,14 @@ DECIONIS_ENFORCE_API_KEY=
 DECIONIS_MODE=SHADOW         # SHADOW | ENFORCEMENT; legacy live maps to enforcement
 ```
 
+### 5.4 Hosted deployment
+
+- Production serves the built dashboard, overlay, OAuth callback, API and WebSocket routes from one HTTPS origin. Development keeps the existing three-process commands.
+- Azure deployment reuses the Central US `decionis-aks` cluster, `decionisacr` registry, `decionis-nginx` ingress and DNS-01 certificate issuer used by SwarmPay. Terraform owns only RaidRumble resources and its `raids.decionis.com` DNS record.
+- Run one replica with a Recreate rollout and a persistent disk for the full data directory. Match state and Twitch/browser sessions remain in memory; a process restart requires reconnecting Twitch.
+- The hosted anonymous preview is bounded, uses authored templates and the local gate, and grants temporary control to one browser. It cannot change shared settings or consume paid generation. Authenticated channel controls keep their existing identity checks.
+- Runtime secrets are applied separately from Terraform and are never included in images, state, logs or source control. OAuth callback query strings must not enter ingress access logs.
+
 ## 6. Commands (keep these working at all times)
 
 ```
@@ -423,6 +431,7 @@ twitch event trigger channel.raid --transport=websocket --to-user <hostId> --fro
 - [x] **T28 / E12** Consistent US copy, feature names, arrows and Warlord feedback
 - [x] **T29** Current Devpost/README, committed media, accurate evidence and public default branch
 - [x] **T30** Genuine Twitch/Codex capture, refreshed under-three-minute video and final submission package
+- [ ] **T31** Terraform deployment to Azure Central US at `raids.decionis.com`, with HTTPS, persistent storage and hosted verification
 
 Completed checkboxes describe verified implementation and the release bundle delivered through [PR #3](https://github.com/ocularminds/raidrumble/pull/3). The enhancement checkout passes 609 tests across 71 files. T12's wire mapping, signed dossiers and isolated grant/claim/receipt lifecycle are confirmed against the hosted authority. The later production-budget start verified a signed evaluation and binding, but its receipt request timed out. In-match actions retain the 120 ms budget; setup actions have the bounded allowance in §4.1. The public one-account Twitch practice, separate hosted probe and remaining live-raid checks are recorded in `docs/verify.md`. The final video and completed Devpost submission are linked in `docs/demo.md`; `docs/submission.json` records the exact build session ID and submission confirmation.
 
@@ -459,3 +468,4 @@ Completed checkboxes describe verified implementation and the release bundle del
 - 2026-10-31 · T29/T30 progress: Captured two public babafesti Test Raid Real Chat sessions using one account, with a loss then boss victory and an Afterglow sample of 1; genuine Codex clips show the contract and later parallel enhancement work. Documentation reflects those limits; final video/publication/submission remain open.
 - 2026-11-01 · T29/T30 publication checkpoint: Published the reviewed 149.33-second video with English captions and the Siege thumbnail; added public transcript, contact sheet, provenance and verification records. Devpost story, video and four captioned screenshots are saved; final eligibility/submission and the default-branch merge remain open. The final rerun passes 609 tests across 71 files.
 - 2026-11-01 · T29/T30: Devpost confirmed “Project submitted!” after the user's eligibility and terms confirmations. The submitted entry uses session `01a1930a-c3f4-7b53-b90a-a523ae252545`; the public video, four screenshots, accurate documentation and final release bundle are recorded through PR #3. All twelve enhancements are complete; 609 tests across 71 files and formatting pass.
+- 2026-11-01 · T31 preparation: Added production static hosting, bounded public preview/WebSockets and OAuth sessions, a Linux image and scoped Azure Terraform. 654 tests across 78 files, build/typecheck, lint, formatting and all four simulations pass; deployment verification remains in progress.
